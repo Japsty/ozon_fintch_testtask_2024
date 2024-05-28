@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  mysqlDB:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_DATABASE: Vkontakte
+      MYSQL_USER: Vkontakte
+      MYSQL_PASSWORD: vkontakte
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    networks:
+      - service_network
+
+  mongoDB:
+    image: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - service_network
+
+  redditclone:
+    image: 6pract
+    restart: always
+    depends_on:
+      - mysqlDB
+      - mongoDB
+    networks:
+      - service_network
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: '8081'
+
+networks:
+  service_network:
+    driver: bridge
