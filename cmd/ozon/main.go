@@ -6,22 +6,35 @@ import (
 	"context"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 	"log"
 )
 
 func main() {
-	//Подгружаем переменные окружения
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file: ", err)
 	}
 
-	//Коннектимся к постгре
-	db, err := connect.NewPostgresConnection()
+	zapLogger, err := zap.NewProduction()
 	if err != nil {
-		log.Fatal("Main NewPostgresConnection Error: ", err)
+		return
 	}
-	defer db.Close()
+	defer func(zapLogger *zap.Logger) {
+		err = zapLogger.Sync()
+		if err != nil {
+			return
+		}
+	}(zapLogger)
+	logger := zapLogger.Sugar()
+
+	postgresConnect, err := connect.NewPostgresConnection()
+	if err != nil {
+		logger.Error("Connecting to SQL database error: ", err)
+		return
+	}
+	defer postgresConnect.Close()
+
 	repo := repos.New(db)
 
 	//Поднимаем миграции

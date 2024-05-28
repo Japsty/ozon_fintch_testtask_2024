@@ -1,15 +1,15 @@
-FROM golang:latest
-
-WORKDIR /asperitas
-COPY . .
-
+FROM golang:1.22-alpine AS build_stage
+COPY . /app
+WORKDIR /app
 COPY go.mod .
 COPY go.sum .
-
 RUN go mod download
+RUN CGO_ENABLED=0 go build -o /app_binary/ozon ./cmd/ozon
 
-RUN go build -o main ./06_databases/99_hw/redditclone/cmd/redditclone
 
-CMD ["/asperitas/main"]
-
-EXPOSE 8080
+FROM alpine AS run_stage
+WORKDIR /app_binary
+COPY --from=build_stage /app_binary/ozon /app_binary/
+RUN chmod +x ./ozon
+ENTRYPOINT ./ozon
+CMD [ "ozon" ]

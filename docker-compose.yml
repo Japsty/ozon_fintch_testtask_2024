@@ -1,39 +1,45 @@
 version: '3'
 
 services:
-  mysqlDB:
-    image: mysql:latest
+  pq_database:
+    image: postgres:latest
     restart: always
     environment:
-      MYSQL_DATABASE: Vkontakte
-      MYSQL_USER: Vkontakte
-      MYSQL_PASSWORD: vkontakte
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_DB: Ozon
+      POSTGRES_USER: Ozon
+      POSTGRES_PASSWORD: ozon
     ports:
-      - "3306:3306"
+      - "5432:5432"
     networks:
       - service_network
 
-  mongoDB:
-    image: mongo
+  service:
+    image: japsty/
     restart: always
-    ports:
-      - "27017:27017"
-    networks:
-      - service_network
-
-  redditclone:
-    image: 6pract
-    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
     depends_on:
-      - mysqlDB
-      - mongoDB
+      - pq_database
     networks:
       - service_network
     ports:
       - "8081:8081"
     environment:
       PORT: '8081'
+#
+#  redditclone:
+#    image: 6pract
+#    restart: always
+#    depends_on:
+#      - mysqlDB
+#      - mongoDB
+#    networks:
+#      - service_network
+#    ports:
+#      - "8081:8081"
+#    environment:
+#      PORT: '8081'
 
 networks:
   service_network:
