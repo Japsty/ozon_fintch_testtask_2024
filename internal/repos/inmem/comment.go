@@ -2,6 +2,7 @@ package inmem
 
 import (
 	"Ozon_testtask/internal/models"
+	"context"
 	"sync"
 )
 
@@ -17,7 +18,7 @@ func NewCommentInMemoryRepository() *CommentInMemoryRepository {
 	}
 }
 
-func (cr *CommentInMemoryRepository) CreateComment(id, content, userID, postID, parentCommentID string) ([]models.Comment, error) {
+func (cr *CommentInMemoryRepository) CreateComment(_ context.Context, id, content, userID, postID, parentCommentID string) ([]models.Comment, error) {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 
@@ -35,7 +36,7 @@ func (cr *CommentInMemoryRepository) CreateComment(id, content, userID, postID, 
 	return cr.data[postID], nil
 }
 
-func (cr *CommentInMemoryRepository) DeleteComment(userID, postID, commentID string) ([]models.Comment, error) {
+func (cr *CommentInMemoryRepository) DeleteCommentByID(_ context.Context, userID, postID, commentID string) ([]models.Comment, error) {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 

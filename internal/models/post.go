@@ -1,5 +1,7 @@
 package models
 
+import "context"
+
 type Post struct {
 	ID              string     `json:"id"`
 	Title           string     `json:"title"`
@@ -9,9 +11,9 @@ type Post struct {
 }
 
 type PostRepo interface {
-	GetAllPosts() ([]Post, error)
-	CreatePost(string, string, string, bool) (Post, error)
-	GetPostByPostID(string) (Post, error)
-	UpdatePostComments(string, bool) (Post, error)
-	DeletePostByID(string) error
+	GetAllPosts(context.Context) ([]Post, error)
+	CreatePost(context.Context, string, string, string, bool) (Post, error)
+	GetPostByPostID(context.Context, string) (Post, error)
+	UpdatePostComments(context.Context, string, bool) (Post, error)
+	DeletePostByID(context.Context, string) error
 }

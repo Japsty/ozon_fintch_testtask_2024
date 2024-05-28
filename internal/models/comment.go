@@ -1,5 +1,7 @@
 package models
 
+import "context"
+
 type Comment struct {
 	ID              string     `json:"id"`
 	Content         string     `json:"content"`
@@ -10,7 +12,7 @@ type Comment struct {
 }
 
 type CommentRepo interface {
-	CreateComment(string, string, string, string, string) ([]Comment, error)
+	CreateComment(context.Context, string, string, string, string, string) ([]Comment, error)
 	//UpdateComment(string, string) error
-	DeleteCommentByID(string, string, string) ([]Comment, error)
+	DeleteCommentByID(context.Context, string, string, string) ([]Comment, error)
 }

@@ -2,6 +2,7 @@ package inmem
 
 import (
 	"Ozon_testtask/internal/models"
+	"context"
 	"errors"
 	"sync"
 )
@@ -22,7 +23,7 @@ func NewPostInMemoryRepository() *PostInMemoryRepository {
 	}
 }
 
-func (pr *PostInMemoryRepository) GetAllPosts() ([]models.Post, error) {
+func (pr *PostInMemoryRepository) GetAllPosts(_ context.Context) ([]models.Post, error) {
 	pr.mutex.RLock()
 	defer pr.mutex.RUnlock()
 
@@ -35,7 +36,7 @@ func (pr *PostInMemoryRepository) GetAllPosts() ([]models.Post, error) {
 	return result, nil
 }
 
-func (pr *PostInMemoryRepository) CreatePost(id, title, content string, commentsAllowed bool) (models.Post, error) {
+func (pr *PostInMemoryRepository) CreatePost(_ context.Context, id, title, content string, commentsAllowed bool) (models.Post, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 
@@ -52,7 +53,7 @@ func (pr *PostInMemoryRepository) CreatePost(id, title, content string, comments
 	return post, nil
 }
 
-func (pr *PostInMemoryRepository) GetPostByPostID(id string) (models.Post, error) {
+func (pr *PostInMemoryRepository) GetPostByPostID(_ context.Context, id string) (models.Post, error) {
 	pr.mutex.RLock()
 	defer pr.mutex.RUnlock()
 
@@ -64,11 +65,11 @@ func (pr *PostInMemoryRepository) GetPostByPostID(id string) (models.Post, error
 	return v, nil
 }
 
-func (pr *PostInMemoryRepository) UpdatePostComments(id string, commentsAllowed bool) (models.Post, error) {
+func (pr *PostInMemoryRepository) UpdatePostComments(ctx context.Context, id string, commentsAllowed bool) (models.Post, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 
-	post, err := pr.GetPostByPostID(id)
+	post, err := pr.GetPostByPostID(ctx, id)
 	if err != nil {
 		return models.Post{}, err
 	}
@@ -78,7 +79,7 @@ func (pr *PostInMemoryRepository) UpdatePostComments(id string, commentsAllowed 
 	return post, nil
 }
 
-func (pr *PostInMemoryRepository) DeletePostByID(id string) error {
+func (pr *PostInMemoryRepository) DeletePostByID(_ context.Context, id string) error {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 

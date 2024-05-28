@@ -2,96 +2,76 @@ package postgre
 
 import (
 	"Ozon_testtask/internal/models"
+	"Ozon_testtask/internal/repos/postgre/querries"
+	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log"
 )
-
-type PostRepo interface {
-	GetAllPosts() ([]Post, error)
-	CreatePost(string, string, string, bool) (Post, error)
-	GetPostByPostID(string) (Post, error)
-	UpdatePostComments(string, bool) (Post, error)
-	DeletePostByID(string) error
-}
 
 type PostMemoryRepository struct {
 	db *pgxpool.Pool
 }
 
-func NewPostMemoryRepository(db *pgxpool.Pool) *PostMemoryRepository {
+func NewPostRepository(db *pgxpool.Pool) *PostMemoryRepository {
 	return &PostMemoryRepository{db: db}
 }
 
-func (g *PostMemoryRepository) ExistionCheck(ctx context.Context, goodId, projectId int) (bool, error) {
-	var exists bool
-	err := g.db.QueryRow(ctx, querries.CheckRecord, goodId, projectId).Scan(&exists)
+func (pr *PostMemoryRepository) GetAllPosts(ctx context.Context) ([]models.Post, error) {
+	rows, err := pr.db.Query(ctx, querries.GetAllPosts)
 	if err != nil {
-		log.Printf("UpdateGood QueryRow CheckRecord Error: %v", err)
-		return false, err
-	}
-	if !exists {
-		log.Printf("Record doesn't exists")
-		return exists, nil
-	}
-	return exists, nil
-}
-
-func (pr *PostMemoryRepository) GetAllPosts() ([]models.Post, error) {
-	pr.db.
-}
-
-func (pr *PostMemoryRepository) CreatePost(id, title, content string, commentsAllowed bool) (models.Post, error) {
-	pr.mutex.Lock()
-	defer pr.mutex.Unlock()
-
-	post := models.Post{
-		ID:              id,
-		Title:           title,
-		Content:         content,
-		Comments:        []*models.Comment{},
-		CommentsAllowed: commentsAllowed,
+		return nil, err
 	}
 
-	pr.data[id] = post
+	var posts []models.Post
 
-	return post, nil
-}
+	for rows.Next() {
+		var post models.Post
+		if err := rows.Scan(
+			&post.ID,
+			&post.Title,
+			&post.Content,
+			&post.Comments,
+			&post.CommentsAllowed,
+		); err != nil {
+			return nil, err
+		}
 
-func (pr *PostMemoryRepository) GetPostByPostID(id string) (models.Post, error) {
-	pr.mutex.RLock()
-	defer pr.mutex.RUnlock()
-
-	v, ok := pr.data[id]
-	if !ok {
-		return models.Post{}, errNotFound
+		posts = append(posts, post)
 	}
 
-	return v, nil
+	return posts, nil
 }
 
-func (pr *PostMemoryRepository) UpdatePostComments(id string, commentsAllowed bool) (models.Post, error) {
-	pr.mutex.Lock()
-	defer pr.mutex.Unlock()
-
-	post, err := pr.GetPostByPostID(id)
+func (pr *PostMemoryRepository) CreatePost(ctx context.Context, id, title, content string, commentsAllowed bool) (models.Post, error) {
+	var post models.Post
+	err := pr.db.QueryRow(ctx, querries.CreatePost, id, title, content, commentsAllowed).Scan(&post)
 	if err != nil {
 		return models.Post{}, err
 	}
-	post.CommentsAllowed = commentsAllowed
-	pr.data[id] = post
 
 	return post, nil
 }
 
-func (pr *PostMemoryRepository) DeletePostByID(id string) error {
-	pr.mutex.Lock()
-	defer pr.mutex.Unlock()
-
-	if _, ok := pr.data[id]; !ok {
-		return errNotFound
+func (pr *PostMemoryRepository) GetPostByPostID(ctx context.Context, id string) (models.Post, error) {
+	var post models.Post
+	err := pr.db.QueryRow(ctx, querries.GetPostByID, id).Scan(&post)
+	if err != nil {
+		return models.Post{}, err
 	}
 
-	delete(pr.data, id)
+	return post, nil
+}
 
+func (pr *PostMemoryRepository) UpdatePostComments(ctx context.Context, id string, commentsAllowed bool) (models.Post, error) {
+	var post models.Post
+	err := pr.db.QueryRow(ctx, querries.UpdatePostComments, id, commentsAllowed)
+	if err != nil {
+		return models.Post{}, nil
+	}
+
+	return post, nil
+}
+
+func (pr *PostMemoryRepository) DeletePostByID(ctx context.Context, id string) error {
+	//err := pr.db.Exec(ctx,querries.Dele)
 	return nil
 }
