@@ -29,7 +29,8 @@ const (
 	`
 	CreatePost = `
 		INSERT INTO posts (id, title, content, comments_allowed)
-		VALUES ($1, $2, $3, $4);
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, title, content, comments_allowed;
 	`
 	GetPostByID = `
 		SELECT id, title, content, comments_allowed

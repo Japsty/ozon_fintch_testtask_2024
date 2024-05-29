@@ -2,6 +2,7 @@ package main
 
 import (
 	"Ozon_testtask/graph"
+	"Ozon_testtask/internal/middleware"
 	"Ozon_testtask/internal/model"
 	"Ozon_testtask/internal/repos/inmem"
 	"Ozon_testtask/internal/repos/postgre"
@@ -9,27 +10,20 @@ import (
 	"Ozon_testtask/pkg/storage/connect"
 	"Ozon_testtask/pkg/storage/migrate"
 	"context"
-	"flag"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
-	"log"
 	"net/http"
 	"os"
 	"time"
 )
 
 func main() {
-	var storageType string
-	flag.StringVar(&storageType, "storage", "inmemory", "storage type: inmemory or postgres")
-	flag.Parse()
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file: ", err)
-	}
+	//err := godotenv.Load()
+	//if err != nil {
+	//	log.Fatal("Error loading .env file: ", err)
+	//}
 
 	zapLogger, err := zap.NewProduction()
 	if err != nil {
@@ -47,7 +41,9 @@ func main() {
 	var pr model.PostRepo
 	var cr model.CommentRepo
 
+	storageType := os.Getenv("STORAGE")
 	if storageType == "postgres" {
+		logger.Infof("postgres enabled")
 		postgresConnect, err := connect.NewPostgresConnection()
 		if err != nil {
 			logger.Error("Connecting to SQL database error: ", err)
@@ -81,13 +77,15 @@ func main() {
 	resolver := graph.NewResolver(ps, cs, logger)
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
+	//srv.Use(middleware.AccessLog(logger))
 
+	//http.Handle("/graphql", middleware.AccessLog(sugar, middleware.Auth(sugar, srv)))
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	http.Handle("/query", middleware.AccessLog(logger, srv))
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "8081"
 	}
 
 	// err = router.Run("localhost:8080") - если на локальной машине

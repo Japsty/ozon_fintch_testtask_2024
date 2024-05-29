@@ -4,15 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"os"
 	"time"
 )
 
 // NewPostgresConnection - функция создающая подключение к БД и предоставляющая его наружу
 func NewPostgresConnection() (*pgxpool.Pool, error) {
-	DBSource := os.Getenv("DB_SOURCE")
-
-	config, err := pgxpool.ParseConfig(DBSource)
+	config, err := pgxpool.ParseConfig("postgresql://Ozon:ozon@pq_database:5432/Ozon?sslmode=disable")
 	if err != nil {
 		fmt.Println("Error parsing database source:", err)
 		return nil, err

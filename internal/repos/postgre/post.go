@@ -43,7 +43,12 @@ func (pr *PostMemoryRepository) GetAllPosts(ctx context.Context) ([]*model.Post,
 
 func (pr *PostMemoryRepository) CreatePost(ctx context.Context, id, title, content string, commentsAllowed bool) (model.Post, error) {
 	var post model.Post
-	err := pr.db.QueryRow(ctx, querries.CreatePost, id, title, content, commentsAllowed).Scan(&post)
+	err := pr.db.QueryRow(ctx, querries.CreatePost, id, title, content, commentsAllowed).Scan(
+		&post.ID,
+		&post.Title,
+		&post.Content,
+		&post.CommentsAllowed,
+	)
 	if err != nil {
 		return model.Post{}, err
 	}
