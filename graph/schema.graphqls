@@ -3,6 +3,7 @@
 # https://gqlgen.com/getting-started/
 
 scalar UUID
+scalar DateTime
 
 type Query {
   posts: [Post]!
@@ -25,9 +26,10 @@ type Post {
   id: UUID!
   title: String!
   content: String!
+  userId: UUID!
   comments: [Comment]!
   commentsAllowed: Boolean!
-  createdAt: String!
+  createdAt: DateTime!
 }
 
 
@@ -45,7 +47,7 @@ type Comment {
   postId: UUID!
   parentCommentId: UUID
   replies: [Comment]
-  createdAt: String!
+  createdAt: DateTime!
 }
 
 type Subscription {

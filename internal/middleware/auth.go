@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"Ozon_testtask/internal/services"
+	"context"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
@@ -27,18 +30,26 @@ func Auth(logger *zap.SugaredLogger, next http.Handler) http.Handler {
 
 		authToken = tokenParts[1]
 
-		//claims := jwt.MapClaims{}
-		//token, err := jwt.ParseWithClaims(authToken, claims, func(token *jwt.Token) (interface{}, error) {
-		//	//return services.TokenSecret, nil
-		//})
+		claims := jwt.MapClaims{}
+		token, err := jwt.ParseWithClaims(authToken, claims, func(token *jwt.Token) (interface{}, error) {
+			return services.TokenSecret, nil
+		})
 
-		//if err != nil || !token.Valid {
-		//	logger.Errorf(reqIDString+"Auth err: %s, is token valid: %b", err, token.Valid)
-		//	w.WriteHeader(http.StatusUnauthorized)
-		//	return
-		//}
+		if err != nil || !token.Valid {
+			logger.Errorf(reqIDString+"Auth err: %s, is token valid: %t", err, token.Valid)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 
-		//r = r.WithContext(context.WithValue(r.Context(), "token", token))
-		//next.ServeHTTP(w, r)
+		userID, ok := claims["user_id"].(string)
+		if !ok {
+			logger.Error(reqIDString + "User ID not found in token")
+			http.Error(w, "User ID not found in token", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "userID", userID)
+		r = r.WithContext(ctx)
+		next.ServeHTTP(w, r)
 	})
 }

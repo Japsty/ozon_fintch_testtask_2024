@@ -55,8 +55,8 @@ func (cs *CommentService) GetCommentByParentID(ctx context.Context, parentID str
 	return comments, nil
 }
 
-func (cs *CommentService) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
-	comments, err := cs.CommentRepo.GetCommentsByPostID(ctx, postID)
+func (cs *CommentService) GetCommentsByPostID(ctx context.Context, postID string, limit int, offset int) ([]*model.Comment, error) {
+	comments, err := cs.CommentRepo.GetCommentsByPostIDPaginated(ctx, postID, limit, offset)
 	if err != nil {
 		return nil, err
 	}

@@ -8,31 +8,39 @@ const (
 		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP);
 	`
 	GetCommentsByParentID = `
-		SELECT id, content, user_id, post_id, parent_comment_id
+		SELECT id, content, author_id, post_id, parent_comment_id, created_at
 		FROM comments
 		WHERE parent_comment_id = $1;
     `
 
 	GetCommentsByPostID = `
-		SELECT id, content, user_id, post_id, parent_comment_id
+		SELECT id, content, author_id, post_id, parent_comment_id, created_at
 		FROM comments
 		WHERE post_id = $1;
+    `
+
+	GetCommentsByPostIDPaginated = `
+		SELECT id, content, author_id, post_id, parent_comment_id, created_at
+		FROM comments
+		WHERE post_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3;
     `
 	//----------------------------------------------
 
 	// POST QUERRIES---------------------------------
 
 	GetAllPosts = `
-		SELECT id, title, content, comments_allowed
+		SELECT id, title, content, user_id, comments_allowed, created_at
 		FROM posts;
 	`
 	CreatePost = `
-		INSERT INTO posts (id, title, content, comments_allowed)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, title, content, comments_allowed;
+		INSERT INTO posts (id, title, content, user_id, comments_allowed,created_at)
+		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+		RETURNING id, title, content, user_id, comments_allowed,created_at;
 	`
 	GetPostByID = `
-		SELECT id, title, content, comments_allowed
+		SELECT id, title, content, user_id, comments_allowed, created_at
 		FROM posts
 		WHERE id = $1;
 	`
@@ -40,7 +48,7 @@ const (
 		UPDATE posts
 		SET comments_allowed = $2
 		WHERE id = $1
-		RETURNING id, title, content, comments_allowed;
+		RETURNING id, title, content, user_id, comments_allowed,created_at;
 	`
 
 	//----------------------------------------------

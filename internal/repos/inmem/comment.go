@@ -69,3 +69,27 @@ func (cr *CommentInMemoryRepository) GetCommentsByPostID(_ context.Context, post
 
 	return comments, nil
 }
+
+func (cr *CommentInMemoryRepository) GetCommentsByPostIDPaginated(_ context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
+	cr.mutex.RLock()
+	defer cr.mutex.RUnlock()
+
+	comments := []*model.Comment{}
+	for _, comms := range cr.data {
+		for _, comm := range comms {
+			if comm.PostID == postID {
+				if offset > 0 {
+					offset--
+					continue
+				} else if limit > 0 {
+					comments = append(comments, comm)
+					limit--
+				} else {
+					break
+				}
+			}
+		}
+	}
+
+	return comments, nil
+}

@@ -16,6 +16,12 @@ type DBUser struct {
 	ID           string `json:"id"`
 }
 
+type Session struct {
+	UserID string
+	Token  string
+	Exp    int64
+}
+
 type UserRepo interface {
 	CreateUser(context.Context, string, string, []byte) (User, error)
 	GetUser(context.Context, string, string) (User, error)

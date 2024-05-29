@@ -21,11 +21,6 @@ import (
 )
 
 func main() {
-	//err := godotenv.Load()
-	//if err != nil {
-	//	log.Fatal("Error loading .env file: ", err)
-	//}
-
 	zapLogger, err := zap.NewProduction()
 	if err != nil {
 		return
@@ -80,6 +75,9 @@ func main() {
 	r := mux.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {
 		return middleware.AccessLog(logger, next)
+	})
+	r.Use(func(next http.Handler) http.Handler {
+		return middleware.Auth(logger, next)
 	})
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 )
 
 var (
@@ -46,6 +47,7 @@ func (pr *PostInMemoryRepository) CreatePost(_ context.Context, id, title, conte
 		Content:         content,
 		Comments:        []*model.Comment{},
 		CommentsAllowed: commentsAllowed,
+		CreatedAt:       time.Now().String(),
 	}
 
 	pr.data[id] = post

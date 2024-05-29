@@ -5,6 +5,7 @@ import (
 	"Ozon_testtask/internal/repos/postgre/querries"
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
 )
 
 type CommentMemoryRepository struct {
@@ -29,17 +30,18 @@ func (cr *CommentMemoryRepository) CreateComment(ctx context.Context, id, conten
 	comments := []*model.Comment{}
 	for rows.Next() {
 		comment := &model.Comment{}
+		var createdAtTime time.Time
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
 			&comment.Author,
 			&comment.PostID,
 			&comment.ParentCommentID,
-			&comment.CreatedAt,
+			&createdAtTime,
 		); err != nil {
 			return nil, err
 		}
-
+		comment.CreatedAt = createdAtTime.String()
 		comments = append(comments, comment)
 	}
 
@@ -56,16 +58,18 @@ func (cr *CommentMemoryRepository) GetCommentByParentID(ctx context.Context, par
 	comments := []*model.Comment{}
 	for rows.Next() {
 		comment := &model.Comment{}
+		var createdAtTime time.Time
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
 			&comment.Author,
 			&comment.PostID,
 			&comment.ParentCommentID,
-			&comment.CreatedAt,
+			&createdAtTime,
 		); err != nil {
 			return nil, err
 		}
+		comment.CreatedAt = createdAtTime.String()
 		comments = append(comments, comment)
 	}
 
@@ -82,16 +86,46 @@ func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, post
 	comments := []*model.Comment{}
 	for rows.Next() {
 		comment := &model.Comment{}
+		var createdAtTime time.Time
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
 			&comment.Author,
 			&comment.PostID,
 			&comment.ParentCommentID,
-			&comment.CreatedAt,
+			&createdAtTime,
 		); err != nil {
 			return nil, err
 		}
+		comment.CreatedAt = createdAtTime.String()
+		comments = append(comments, comment)
+	}
+
+	return comments, nil
+}
+
+func (cr *CommentMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
+	rows, err := cr.db.Query(ctx, querries.GetCommentsByPostIDPaginated, postID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	comments := []*model.Comment{}
+	for rows.Next() {
+		comment := &model.Comment{}
+		var createdAtTime time.Time
+		if err := rows.Scan(
+			&comment.ID,
+			&comment.Content,
+			&comment.Author,
+			&comment.PostID,
+			&comment.ParentCommentID,
+			&createdAtTime,
+		); err != nil {
+			return nil, err
+		}
+		comment.CreatedAt = createdAtTime.String()
 		comments = append(comments, comment)
 	}
 
