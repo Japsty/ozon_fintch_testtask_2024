@@ -1,11 +1,12 @@
 package postgre
 
 import (
-	"Ozon_testtask/internal/models"
+	"Ozon_testtask/internal/model"
 	"Ozon_testtask/internal/repos/postgre/querries"
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 )
@@ -17,37 +18,37 @@ var (
 )
 
 type UserMySQLRepository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
-func NewUserRepository(db *sql.DB) *UserMySQLRepository {
+func NewUserRepository(db *pgxpool.Pool) *UserMySQLRepository {
 	return &UserMySQLRepository{db: db}
 }
 
-func (repo *UserMySQLRepository) CreateUser(ctx context.Context, userID, login string, password []byte) (models.User, error) {
+func (repo *UserMySQLRepository) CreateUser(ctx context.Context, userID, login string, password []byte) (model.User, error) {
 	var exists bool
-	err := repo.db.QueryRow(querries.CheckUserExists, login).Scan(&exists)
+	err := repo.db.QueryRow(ctx, querries.CheckUserExists, login).Scan(&exists)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			exists = false
 		}
-		return models.User{}, err
+		return model.User{}, err
 	}
 
 	if exists {
-		return models.User{}, ErrUserExists
+		return model.User{}, ErrUserExists
 	}
 
-	var createdUser models.User
+	var createdUser model.User
 	var dbPasswordHash string
-	_, err = repo.db.Exec(querries.CreateUser, userID, login, string(password))
+	_, err = repo.db.Exec(ctx, querries.CreateUser, userID, login, string(password))
 	if err != nil {
-		return models.User{}, err
+		return model.User{}, err
 	}
 
-	err = repo.db.QueryRow(querries.GetUserByID, userID).Scan(&createdUser.ID, &createdUser.Username, &dbPasswordHash)
+	err = repo.db.QueryRow(ctx, querries.GetUserByID, userID).Scan(&createdUser.ID, &createdUser.Username, &dbPasswordHash)
 	if err != nil {
-		return models.User{}, err
+		return model.User{}, err
 	}
 
 	createdUser.PasswordHash = []byte(dbPasswordHash)
@@ -55,27 +56,27 @@ func (repo *UserMySQLRepository) CreateUser(ctx context.Context, userID, login s
 	return createdUser, nil
 }
 
-func (repo *UserMySQLRepository) GetUser(ctx context.Context, login, pass string) (models.User, error) {
+func (repo *UserMySQLRepository) GetUser(ctx context.Context, login, pass string) (model.User, error) {
 	var exists bool
-	err := repo.db.QueryRow(querries.CheckUserExists, login).Scan(&exists)
+	err := repo.db.QueryRow(ctx, querries.CheckUserExists, login).Scan(&exists)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			exists = false
 		}
-		return models.User{}, err
+		return model.User{}, err
 	}
 
 	if !exists {
-		return models.User{}, ErrNoUser
+		return model.User{}, ErrNoUser
 	}
 
-	var foundUser models.DBUser
-	err = repo.db.QueryRow(querries.GetUserByLogin, login).Scan(&foundUser.Username, &foundUser.PasswordHash, &foundUser.ID)
+	var foundUser model.DBUser
+	err = repo.db.QueryRow(ctx, querries.GetUserByLogin, login).Scan(&foundUser.Username, &foundUser.PasswordHash, &foundUser.ID)
 	if err != nil {
-		return models.User{}, err
+		return model.User{}, err
 	}
 
-	user := models.User{
+	user := model.User{
 		Username:     foundUser.Username,
 		PasswordHash: []byte(foundUser.PasswordHash),
 		ID:           foundUser.ID,
@@ -84,7 +85,7 @@ func (repo *UserMySQLRepository) GetUser(ctx context.Context, login, pass string
 
 	err = bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(pass))
 	if err != nil {
-		return models.User{}, ErrBadPass
+		return model.User{}, ErrBadPass
 	}
 
 	return user, err

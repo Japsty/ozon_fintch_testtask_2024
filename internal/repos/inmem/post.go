@@ -1,7 +1,7 @@
 package inmem
 
 import (
-	"Ozon_testtask/internal/models"
+	"Ozon_testtask/internal/model"
 	"context"
 	"errors"
 	"sync"
@@ -12,22 +12,22 @@ var (
 )
 
 type PostInMemoryRepository struct {
-	data  map[string]models.Post
+	data  map[string]*model.Post
 	mutex sync.RWMutex
 }
 
 func NewPostInMemoryRepository() *PostInMemoryRepository {
 	return &PostInMemoryRepository{
-		data:  map[string]models.Post{},
+		data:  map[string]*model.Post{},
 		mutex: sync.RWMutex{},
 	}
 }
 
-func (pr *PostInMemoryRepository) GetAllPosts(_ context.Context) ([]models.Post, error) {
+func (pr *PostInMemoryRepository) GetAllPosts(_ context.Context) ([]*model.Post, error) {
 	pr.mutex.RLock()
 	defer pr.mutex.RUnlock()
 
-	result := []models.Post{}
+	result := []*model.Post{}
 
 	for _, val := range pr.data {
 		result = append(result, val)
@@ -36,58 +36,59 @@ func (pr *PostInMemoryRepository) GetAllPosts(_ context.Context) ([]models.Post,
 	return result, nil
 }
 
-func (pr *PostInMemoryRepository) CreatePost(_ context.Context, id, title, content string, commentsAllowed bool) (models.Post, error) {
+func (pr *PostInMemoryRepository) CreatePost(_ context.Context, id, title, content string, commentsAllowed bool) (model.Post, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 
-	post := models.Post{
+	post := &model.Post{
 		ID:              id,
 		Title:           title,
 		Content:         content,
-		Comments:        []*models.Comment{},
+		Comments:        []*model.Comment{},
 		CommentsAllowed: commentsAllowed,
 	}
 
 	pr.data[id] = post
 
-	return post, nil
+	return *post, nil
 }
 
-func (pr *PostInMemoryRepository) GetPostByPostID(_ context.Context, id string) (models.Post, error) {
+func (pr *PostInMemoryRepository) GetPostByPostID(_ context.Context, id string) (model.Post, error) {
 	pr.mutex.RLock()
 	defer pr.mutex.RUnlock()
 
 	v, ok := pr.data[id]
 	if !ok {
-		return models.Post{}, errNotFound
+		return model.Post{}, errNotFound
 	}
 
-	return v, nil
+	return *v, nil
 }
 
-func (pr *PostInMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id string, commentsAllowed bool) (models.Post, error) {
+func (pr *PostInMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id string, commentsAllowed bool) (model.Post, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 
 	post, err := pr.GetPostByPostID(ctx, id)
 	if err != nil {
-		return models.Post{}, err
+		return model.Post{}, err
 	}
 	post.CommentsAllowed = commentsAllowed
-	pr.data[id] = post
+	pr.data[id] = &post
 
 	return post, nil
 }
 
-func (pr *PostInMemoryRepository) DeletePostByID(_ context.Context, id string) error {
+func (pr *PostInMemoryRepository) UpdatePostComments(ctx context.Context, id string, comms []*model.Comment) (model.Post, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 
-	if _, ok := pr.data[id]; !ok {
-		return errNotFound
+	post, err := pr.GetPostByPostID(ctx, id)
+	if err != nil {
+		return model.Post{}, err
 	}
+	post.Comments = comms
+	pr.data[id] = &post
 
-	delete(pr.data, id)
-
-	return nil
+	return post, nil
 }

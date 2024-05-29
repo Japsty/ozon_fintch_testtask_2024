@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"Ozon_testtask/internal/models"
+	"Ozon_testtask/internal/model"
 	"go.uber.org/zap"
 	"time"
 )
@@ -13,7 +13,15 @@ import (
 const TimeoutTime = 500 * time.Millisecond
 
 type Resolver struct {
-	PostService    models.PostService
-	CommentService models.CommentService
+	PostService    model.PostService
+	CommentService model.CommentService
 	Logger         *zap.SugaredLogger
+}
+
+func NewResolver(ps model.PostService, cs model.CommentService, logger *zap.SugaredLogger) *Resolver {
+	return &Resolver{
+		PostService:    ps,
+		CommentService: cs,
+		Logger:         logger,
+	}
 }

@@ -5,8 +5,8 @@
 scalar UUID
 
 type Query {
-  posts: [Post!]!
-  post(id: UUID!): Post
+  posts: [Post]!
+  post(id: UUID!, limit: Int!, offset: Int!): Post
 }
 
 type Mutation {
@@ -25,8 +25,9 @@ type Post {
   id: UUID!
   title: String!
   content: String!
-  comments: [Comment!]!
+  comments: [Comment]!
   commentsAllowed: Boolean!
+  createdAt: String!
 }
 
 
@@ -43,7 +44,8 @@ type Comment {
   author: String!
   postId: UUID!
   parentCommentId: UUID
-  replies: [Comment!]!
+  replies: [Comment]
+  createdAt: String!
 }
 
 type Subscription {

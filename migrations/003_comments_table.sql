@@ -6,8 +6,7 @@ CREATE TABLE IF NOT EXISTS comments
     author_id VARCHAR(255) NOT NULL,
     post_id VARCHAR(255) NOT NULL,
     parent_comment_id VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
 CREATE INDEX post_id_index ON comments (post_id);

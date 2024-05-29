@@ -1,7 +1,7 @@
 package inmem
 
 import (
-	"Ozon_testtask/internal/models"
+	"Ozon_testtask/internal/model"
 	"context"
 	"errors"
 	"golang.org/x/crypto/bcrypt"
@@ -15,28 +15,28 @@ var (
 )
 
 type UserMemoryRepository struct {
-	data map[string]models.User
+	data map[string]model.User
 	mu   *sync.RWMutex
 }
 
 func NewUserRepository() *UserMemoryRepository {
 	return &UserMemoryRepository{
-		data: map[string]models.User{},
+		data: map[string]model.User{},
 		mu:   &sync.RWMutex{},
 	}
 }
 
-func (ur *UserMemoryRepository) CreateUser(_ context.Context, userID, login string, passHash []byte) (models.User, error) {
+func (ur *UserMemoryRepository) CreateUser(_ context.Context, userID, login string, passHash []byte) (model.User, error) {
 	ur.mu.Lock()
 	defer ur.mu.Unlock()
 
 	for _, user := range ur.data {
 		if user.Username == login {
-			return models.User{}, ErrUserExists
+			return model.User{}, ErrUserExists
 		}
 	}
 
-	u := models.User{
+	u := model.User{
 		Username:     login,
 		PasswordHash: passHash,
 		ID:           userID,
@@ -47,11 +47,11 @@ func (ur *UserMemoryRepository) CreateUser(_ context.Context, userID, login stri
 	return u, nil
 }
 
-func (ur *UserMemoryRepository) GetUser(_ context.Context, login, pass string) (models.User, error) {
+func (ur *UserMemoryRepository) GetUser(_ context.Context, login, pass string) (model.User, error) {
 	ur.mu.RLock()
 	defer ur.mu.RUnlock()
 
-	var foundUser *models.User
+	var foundUser *model.User
 	for _, user := range ur.data {
 		if user.Username == login {
 			foundUser = &user
@@ -60,12 +60,12 @@ func (ur *UserMemoryRepository) GetUser(_ context.Context, login, pass string) (
 	}
 
 	if foundUser == nil {
-		return models.User{}, ErrNoUser
+		return model.User{}, ErrNoUser
 	}
 
 	err := bcrypt.CompareHashAndPassword(foundUser.PasswordHash, []byte(pass))
 	if err != nil {
-		return models.User{}, ErrBadPass
+		return model.User{}, ErrBadPass
 	}
 
 	return *foundUser, nil
