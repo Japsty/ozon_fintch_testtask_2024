@@ -4,6 +4,7 @@ import (
 	"Ozon_testtask/internal/models"
 	"context"
 	"sync"
+	"time"
 )
 
 type CommentInMemoryRepository struct {
@@ -28,6 +29,8 @@ func (cr *CommentInMemoryRepository) CreateComment(_ context.Context, id, conten
 		AuthorID:        userID,
 		PostID:          postID,
 		ParentCommentID: parentCommentID,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 		Replies:         []*models.Comment{},
 	}
 
@@ -36,21 +39,34 @@ func (cr *CommentInMemoryRepository) CreateComment(_ context.Context, id, conten
 	return cr.data[postID], nil
 }
 
-func (cr *CommentInMemoryRepository) DeleteCommentByID(_ context.Context, userID, postID, commentID string) ([]models.Comment, error) {
-	cr.mutex.Lock()
-	defer cr.mutex.Unlock()
+func (cr *CommentInMemoryRepository) GetCommentByParentID(_ context.Context, parentID string) ([]models.Comment, error) {
+	cr.mutex.RLock()
+	defer cr.mutex.RUnlock()
 
-	postComments := cr.data[postID]
-	for idx, val := range postComments {
-		if val.ID == commentID {
-			if val.AuthorID != userID {
-				return []models.Comment{}, errNotFound
+	comments := []models.Comment{}
+	for _, comms := range cr.data {
+		for _, comm := range comms {
+			if comm.ParentCommentID == parentID {
+				comments = append(comments, comm)
 			}
-			postComments = append(postComments[:idx], postComments[idx+1:]...)
-			cr.data[postID] = postComments
-			return cr.data[postID], nil
 		}
 	}
 
-	return []models.Comment{}, errNotFound
+	return comments, nil
+}
+
+func (cr *CommentInMemoryRepository) GetCommentsByPostID(_ context.Context, postID string) ([]models.Comment, error) {
+	cr.mutex.RLock()
+	defer cr.mutex.RUnlock()
+
+	comments := []models.Comment{}
+	for _, comms := range cr.data {
+		for _, comm := range comms {
+			if comm.PostID == postID {
+				comments = append(comments, comm)
+			}
+		}
+	}
+
+	return comments, nil
 }

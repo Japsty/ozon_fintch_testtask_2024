@@ -5,12 +5,20 @@ const (
 
 	CreateComment = `
 		INSERT INTO comments(id, content, author_id, post_id, parent_comment_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		RETURNING id, content, user_id, post_id, parent_comment_id;
 	`
+	GetCommentsByParentID = `
+		SELECT id, content, user_id, post_id, parent_comment_id
+		FROM comments
+		WHERE parent_comment_id = $1;
+    `
+
 	GetCommentsByPostID = `
-		SELECT id, content, author_id, post_id, parent_comment_id, created_at, updated_at
-		FROM comments WHERE post_id = $1
-	`
+		SELECT id, content, user_id, post_id, parent_comment_id
+		FROM comments
+		WHERE post_id = $1;
+    `
 	//----------------------------------------------
 
 	// POST QUERRIES---------------------------------
@@ -28,7 +36,7 @@ const (
 		FROM posts
 		WHERE id = $1;
 	`
-	UpdatePostComments = `
+	UpdatePostCommentsStatus = `
 		UPDATE posts
 		SET comments_allowed = $2
 		WHERE id = $1

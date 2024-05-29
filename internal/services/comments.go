@@ -1,10 +1,16 @@
 package services
 
-import "Ozon_testtask/internal/models"
+import (
+	"Ozon_testtask/internal/models"
+	"context"
+	"errors"
+	"github.com/google/uuid"
+)
 
 var (
-	errNotFound  = errors.New("not found")
-	errForbidden = errors.New("forbidden")
+	errNotFound           = errors.New("not found")
+	errForbidden          = errors.New("forbidden")
+	errCommentsNotAllowed = errors.New("comments not allowed")
 )
 
 type CommentService struct {
@@ -16,51 +22,44 @@ func NewCommentService(commentRepo models.CommentRepo, postRepo models.PostRepo)
 	return &CommentService{CommentRepo: commentRepo, PostRepo: postRepo}
 }
 
-func (cs *CommentService) CommentPost(ctx context.Context, author models.Author, postID string, commentText string) (models.Post, error) {
-	err := cs.CommentRepo.CreateComment(ctx, author, postID, commentText)
+func (cs *CommentService) CommentPost(ctx context.Context, userID string, postID string, commentText string) ([]models.Comment, error) {
+	commentID := uuid.NewString()
+	post, err := cs.PostRepo.GetPostByPostID(ctx, postID)
 	if err != nil {
-		return models.Post{}, err
+		return nil, err
+	}
+
+	if !post.CommentsAllowed {
+		return nil, errCommentsNotAllowed
+	}
+
+	_, err = cs.CommentRepo.CreateComment(ctx, commentID, userID, commentText, postID, "")
+	if err != nil {
+		return nil, err
 	}
 
 	updatedComments, err := cs.CommentRepo.GetCommentsByPostID(ctx, postID)
 	if err != nil {
-		return models.Post{}, err
+		return nil, err
 	}
 
-	updatedPost, err := cs.PostRepo.UpdateComment(ctx, postID, updatedComments)
-	if err != nil {
-		return models.Post{}, err
-	}
-
-	return updatedPost, nil
+	return updatedComments, nil
 }
 
-func (cs *CommentService) DeleteComment(ctx context.Context, userID, postID, commentID string) (models.Post, error) {
-	comment, err := cs.CommentRepo.GetCommentByIDs(ctx, postID, commentID)
+func (cs *CommentService) GetCommentByParentID(ctx context.Context, parentID string) ([]models.Comment, error) {
+	comments, err := cs.CommentRepo.GetCommentByParentID(ctx, parentID)
 	if err != nil {
-		return models.Post{}, err
+		return nil, err
 	}
 
-	if comment.Author.UserID != userID {
-		return models.Post{}, errForbidden
-	}
+	return comments, nil
+}
 
-	err = cs.CommentRepo.DeleteComment(ctx, postID, commentID)
-	if err != nil {
-		return models.Post{}, err
-	}
-
+func (cs *CommentService) GetCommentsByPostID(ctx context.Context, postID string) ([]models.Comment, error) {
 	comments, err := cs.CommentRepo.GetCommentsByPostID(ctx, postID)
-	if err != nil && errors.Is(err, errNotFound) {
-		return models.Post{}, errNotFound
-	} else if err != nil {
-		return models.Post{}, err
-	}
-
-	updatedPost, err := cs.PostRepo.UpdateComment(ctx, postID, comments)
 	if err != nil {
-		return models.Post{}, err
+		return nil, err
 	}
 
-	return updatedPost, nil
+	return comments, nil
 }

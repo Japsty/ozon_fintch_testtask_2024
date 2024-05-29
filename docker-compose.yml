@@ -14,7 +14,7 @@ services:
       - service_network
 
   service:
-    image: japsty/
+    image: japsty/ozonPostsNComments
     restart: always
     build:
       context: .

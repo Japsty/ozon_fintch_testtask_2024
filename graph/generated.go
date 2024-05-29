@@ -3,7 +3,7 @@
 package graph
 
 import (
-	"Ozon_testtask/graph/model"
+	"Ozon_testtask/internal/models"
 	"bytes"
 	"context"
 	"embed"
@@ -59,8 +59,8 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddComment     func(childComplexity int, comment model.NewComment) int
-		AddPost        func(childComplexity int, post model.NewPost) int
+		AddComment     func(childComplexity int, comment models.NewComment) int
+		AddPost        func(childComplexity int, post models.NewPost) int
 		ToggleComments func(childComplexity int, postID string, allowed bool) int
 	}
 
@@ -84,17 +84,17 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	AddPost(ctx context.Context, post model.NewPost) (*model.Post, error)
-	AddComment(ctx context.Context, comment model.NewComment) (*model.Comment, error)
-	ToggleComments(ctx context.Context, postID string, allowed bool) (*model.Post, error)
+	AddPost(ctx context.Context, post models.NewPost) (*models.Post, error)
+	AddComment(ctx context.Context, comment models.NewComment) (*models.Comment, error)
+	ToggleComments(ctx context.Context, postID string, allowed bool) (*models.Post, error)
 }
 type QueryResolver interface {
-	Posts(ctx context.Context) ([]*model.Post, error)
-	Post(ctx context.Context, id string) (*model.Post, error)
-	Comments(ctx context.Context, postID string) ([]*model.Comment, error)
+	Posts(ctx context.Context) ([]*models.Post, error)
+	Post(ctx context.Context, id string) (*models.Post, error)
+	Comments(ctx context.Context, postID string) ([]*models.Comment, error)
 }
 type SubscriptionResolver interface {
-	CommentAdded(ctx context.Context, postID string) (<-chan *model.Comment, error)
+	CommentAdded(ctx context.Context, postID string) (<-chan *models.Comment, error)
 }
 
 type executableSchema struct {
@@ -168,7 +168,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddComment(childComplexity, args["comment"].(model.NewComment)), true
+		return e.complexity.Mutation.AddComment(childComplexity, args["comment"].(models.NewComment)), true
 
 	case "Mutation.addPost":
 		if e.complexity.Mutation.AddPost == nil {
@@ -180,7 +180,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddPost(childComplexity, args["post"].(model.NewPost)), true
+		return e.complexity.Mutation.AddPost(childComplexity, args["post"].(models.NewPost)), true
 
 	case "Mutation.toggleComments":
 		if e.complexity.Mutation.ToggleComments == nil {
@@ -418,7 +418,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_addComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.NewComment
+	var arg0 models.NewComment
 	if tmp, ok := rawArgs["comment"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
 		arg0, err = ec.unmarshalNNewComment2Ozon_testtaskᚋgraphᚋmodelᚐNewComment(ctx, tmp)
@@ -433,7 +433,7 @@ func (ec *executionContext) field_Mutation_addComment_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_addPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.NewPost
+	var arg0 models.NewPost
 	if tmp, ok := rawArgs["post"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("post"))
 		arg0, err = ec.unmarshalNNewPost2Ozon_testtaskᚋgraphᚋmodelᚐNewPost(ctx, tmp)
@@ -567,7 +567,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.CollectedField, obj *models.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -611,7 +611,7 @@ func (ec *executionContext) fieldContext_Comment_id(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Comment_content(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_content(ctx context.Context, field graphql.CollectedField, obj *models.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_content(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -655,7 +655,7 @@ func (ec *executionContext) fieldContext_Comment_content(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Comment_author(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_author(ctx context.Context, field graphql.CollectedField, obj *models.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_author(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -699,7 +699,7 @@ func (ec *executionContext) fieldContext_Comment_author(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Comment_postId(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_postId(ctx context.Context, field graphql.CollectedField, obj *models.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_postId(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -743,7 +743,7 @@ func (ec *executionContext) fieldContext_Comment_postId(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Comment_parentCommentId(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_parentCommentId(ctx context.Context, field graphql.CollectedField, obj *models.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_parentCommentId(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -784,7 +784,7 @@ func (ec *executionContext) fieldContext_Comment_parentCommentId(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Comment_replies(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_replies(ctx context.Context, field graphql.CollectedField, obj *models.Comment) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Comment_replies(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -810,7 +810,7 @@ func (ec *executionContext) _Comment_replies(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Comment)
+	res := resTmp.([]*models.Comment)
 	fc.Result = res
 	return ec.marshalNComment2ᚕᚖOzon_testtaskᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
 }
@@ -856,7 +856,7 @@ func (ec *executionContext) _Mutation_addPost(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddPost(rctx, fc.Args["post"].(model.NewPost))
+		return ec.resolvers.Mutation().AddPost(rctx, fc.Args["post"].(models.NewPost))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -865,7 +865,7 @@ func (ec *executionContext) _Mutation_addPost(ctx context.Context, field graphql
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Post)
+	res := resTmp.(*models.Post)
 	fc.Result = res
 	return ec.marshalOPost2ᚖOzon_testtaskᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
@@ -920,7 +920,7 @@ func (ec *executionContext) _Mutation_addComment(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddComment(rctx, fc.Args["comment"].(model.NewComment))
+		return ec.resolvers.Mutation().AddComment(rctx, fc.Args["comment"].(models.NewComment))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -929,7 +929,7 @@ func (ec *executionContext) _Mutation_addComment(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Comment)
+	res := resTmp.(*models.Comment)
 	fc.Result = res
 	return ec.marshalOComment2ᚖOzon_testtaskᚋgraphᚋmodelᚐComment(ctx, field.Selections, res)
 }
@@ -995,7 +995,7 @@ func (ec *executionContext) _Mutation_toggleComments(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Post)
+	res := resTmp.(*models.Post)
 	fc.Result = res
 	return ec.marshalOPost2ᚖOzon_testtaskᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
@@ -1036,7 +1036,7 @@ func (ec *executionContext) fieldContext_Mutation_toggleComments(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *models.Post) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Post_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1080,7 +1080,7 @@ func (ec *executionContext) fieldContext_Post_id(_ context.Context, field graphq
 	return fc, nil
 }
 
-func (ec *executionContext) _Post_title(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_title(ctx context.Context, field graphql.CollectedField, obj *models.Post) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Post_title(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1124,7 +1124,7 @@ func (ec *executionContext) fieldContext_Post_title(_ context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Post_content(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_content(ctx context.Context, field graphql.CollectedField, obj *models.Post) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Post_content(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1168,7 +1168,7 @@ func (ec *executionContext) fieldContext_Post_content(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.CollectedField, obj *models.Post) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Post_comments(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1194,7 +1194,7 @@ func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Comment)
+	res := resTmp.([]*models.Comment)
 	fc.Result = res
 	return ec.marshalNComment2ᚕᚖOzon_testtaskᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
 }
@@ -1226,7 +1226,7 @@ func (ec *executionContext) fieldContext_Post_comments(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Post_commentsAllowed(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_commentsAllowed(ctx context.Context, field graphql.CollectedField, obj *models.Post) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Post_commentsAllowed(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -1296,7 +1296,7 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Post)
+	res := resTmp.([]*models.Post)
 	fc.Result = res
 	return ec.marshalNPost2ᚕᚖOzon_testtaskᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
 }
@@ -1349,7 +1349,7 @@ func (ec *executionContext) _Query_post(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Post)
+	res := resTmp.(*models.Post)
 	fc.Result = res
 	return ec.marshalOPost2ᚖOzon_testtaskᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
@@ -1416,7 +1416,7 @@ func (ec *executionContext) _Query_comments(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Comment)
+	res := resTmp.([]*models.Comment)
 	fc.Result = res
 	return ec.marshalNComment2ᚕᚖOzon_testtaskᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
 }
@@ -1613,7 +1613,7 @@ func (ec *executionContext) _Subscription_commentAdded(ctx context.Context, fiel
 	}
 	return func(ctx context.Context) graphql.Marshaler {
 		select {
-		case res, ok := <-resTmp.(<-chan *model.Comment):
+		case res, ok := <-resTmp.(<-chan *models.Comment):
 			if !ok {
 				return nil
 			}
@@ -3441,8 +3441,8 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj interface{}) (model.NewComment, error) {
-	var it model.NewComment
+func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj interface{}) (models.NewComment, error) {
+	var it models.NewComment
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -3489,8 +3489,8 @@ func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj in
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj interface{}) (model.NewPost, error) {
-	var it model.NewPost
+func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj interface{}) (models.NewPost, error) {
+	var it models.NewPost
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
@@ -3540,7 +3540,7 @@ func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj inter
 
 var commentImplementors = []string{"Comment"}
 
-func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, obj *model.Comment) graphql.Marshaler {
+func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, obj *models.Comment) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, commentImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -3655,7 +3655,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 var postImplementors = []string{"Post"}
 
-func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj *model.Post) graphql.Marshaler {
+func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj *models.Post) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, postImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4186,7 +4186,7 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNComment2ᚕᚖOzon_testtaskᚋgraphᚋmodelᚐCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Comment) graphql.Marshaler {
+func (ec *executionContext) marshalNComment2ᚕᚖOzon_testtaskᚋgraphᚋmodelᚐCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Comment) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -4230,7 +4230,7 @@ func (ec *executionContext) marshalNComment2ᚕᚖOzon_testtaskᚋgraphᚋmodel�
 	return ret
 }
 
-func (ec *executionContext) marshalNComment2ᚖOzon_testtaskᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v *model.Comment) graphql.Marshaler {
+func (ec *executionContext) marshalNComment2ᚖOzon_testtaskᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v *models.Comment) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -4240,17 +4240,17 @@ func (ec *executionContext) marshalNComment2ᚖOzon_testtaskᚋgraphᚋmodelᚐC
 	return ec._Comment(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNNewComment2Ozon_testtaskᚋgraphᚋmodelᚐNewComment(ctx context.Context, v interface{}) (model.NewComment, error) {
+func (ec *executionContext) unmarshalNNewComment2Ozon_testtaskᚋgraphᚋmodelᚐNewComment(ctx context.Context, v interface{}) (models.NewComment, error) {
 	res, err := ec.unmarshalInputNewComment(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNNewPost2Ozon_testtaskᚋgraphᚋmodelᚐNewPost(ctx context.Context, v interface{}) (model.NewPost, error) {
+func (ec *executionContext) unmarshalNNewPost2Ozon_testtaskᚋgraphᚋmodelᚐNewPost(ctx context.Context, v interface{}) (models.NewPost, error) {
 	res, err := ec.unmarshalInputNewPost(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPost2ᚕᚖOzon_testtaskᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2ᚕᚖOzon_testtaskᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Post) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -4294,7 +4294,7 @@ func (ec *executionContext) marshalNPost2ᚕᚖOzon_testtaskᚋgraphᚋmodelᚐP
 	return ret
 }
 
-func (ec *executionContext) marshalNPost2ᚖOzon_testtaskᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2ᚖOzon_testtaskᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *models.Post) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -4613,14 +4613,14 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) marshalOComment2ᚖOzon_testtaskᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v *model.Comment) graphql.Marshaler {
+func (ec *executionContext) marshalOComment2ᚖOzon_testtaskᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v *models.Comment) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Comment(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOPost2ᚖOzon_testtaskᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalOPost2ᚖOzon_testtaskᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *models.Post) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

@@ -61,9 +61,9 @@ func (pr *PostMemoryRepository) GetPostByPostID(ctx context.Context, id string) 
 	return post, nil
 }
 
-func (pr *PostMemoryRepository) UpdatePostComments(ctx context.Context, id string, commentsAllowed bool) (models.Post, error) {
+func (pr *PostMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id string, commentsAllowed bool) (models.Post, error) {
 	var post models.Post
-	err := pr.db.QueryRow(ctx, querries.UpdatePostComments, id, commentsAllowed)
+	err := pr.db.QueryRow(ctx, querries.UpdatePostCommentsStatus, id, commentsAllowed)
 	if err != nil {
 		return models.Post{}, nil
 	}
@@ -71,7 +71,12 @@ func (pr *PostMemoryRepository) UpdatePostComments(ctx context.Context, id strin
 	return post, nil
 }
 
-func (pr *PostMemoryRepository) DeletePostByID(ctx context.Context, id string) error {
-	//err := pr.db.Exec(ctx,querries.Dele)
-	return nil
+func (pr *PostMemoryRepository) UpdatePostComments(ctx context.Context, id string, comments []models.Comment) (models.Post, error) {
+	var post models.Post
+	err := pr.db.QueryRow(ctx, querries.UpdatePostCommentsStatus, id)
+	if err != nil {
+		return models.Post{}, nil
+	}
+
+	return post, nil
 }

@@ -65,7 +65,7 @@ func (pr *PostInMemoryRepository) GetPostByPostID(_ context.Context, id string) 
 	return v, nil
 }
 
-func (pr *PostInMemoryRepository) UpdatePostComments(ctx context.Context, id string, commentsAllowed bool) (models.Post, error) {
+func (pr *PostInMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id string, commentsAllowed bool) (models.Post, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 
