@@ -7,7 +7,9 @@ import (
 	"github.com/google/uuid"
 )
 
-var ErrForbidden = errors.New("forbidden")
+var (
+	ErrForbidden = errors.New("forbidden")
+)
 
 type PostService struct {
 	UserRepo    model.UserRepo
@@ -41,6 +43,9 @@ func (ps *PostService) AddPost(ctx context.Context, Title, Text string, status b
 func (ps *PostService) GetPostByPostID(ctx context.Context, postID string) (model.Post, error) {
 	posts, err := ps.PostRepo.GetPostByPostID(ctx, postID)
 	if err != nil {
+		if errors.Is(err, errors.New("no rows in result set")) {
+			return model.Post{}, errNotFound
+		}
 		return model.Post{}, err
 	}
 	return posts, nil

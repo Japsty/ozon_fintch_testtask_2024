@@ -4,9 +4,8 @@ const (
 	// COMMENTS QUERRIES---------------------------------
 
 	CreateComment = `
-		INSERT INTO comments(id, content, author_id, post_id, parent_comment_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-		RETURNING id, content, user_id, post_id, parent_comment_id;
+		INSERT INTO comments(id, content, author_id, post_id, parent_comment_id, created_at)
+		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP);
 	`
 	GetCommentsByParentID = `
 		SELECT id, content, user_id, post_id, parent_comment_id

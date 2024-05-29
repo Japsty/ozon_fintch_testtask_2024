@@ -24,12 +24,11 @@ func (pr *PostMemoryRepository) GetAllPosts(ctx context.Context) ([]*model.Post,
 	var posts []*model.Post
 
 	for rows.Next() {
-		var post *model.Post
+		post := &model.Post{}
 		if err := rows.Scan(
 			&post.ID,
 			&post.Title,
 			&post.Content,
-			&post.Comments,
 			&post.CommentsAllowed,
 		); err != nil {
 			return nil, err
@@ -58,7 +57,7 @@ func (pr *PostMemoryRepository) CreatePost(ctx context.Context, id, title, conte
 
 func (pr *PostMemoryRepository) GetPostByPostID(ctx context.Context, id string) (model.Post, error) {
 	var post model.Post
-	err := pr.db.QueryRow(ctx, querries.GetPostByID, id).Scan(&post)
+	err := pr.db.QueryRow(ctx, querries.GetPostByID, id).Scan(&post.ID, &post.Title, &post.Content, &post.CommentsAllowed)
 	if err != nil {
 		return model.Post{}, err
 	}
@@ -68,7 +67,12 @@ func (pr *PostMemoryRepository) GetPostByPostID(ctx context.Context, id string) 
 
 func (pr *PostMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id string, commentsAllowed bool) (model.Post, error) {
 	var post model.Post
-	err := pr.db.QueryRow(ctx, querries.UpdatePostCommentsStatus, id, commentsAllowed)
+	err := pr.db.QueryRow(ctx, querries.UpdatePostCommentsStatus, id, commentsAllowed).Scan(
+		&post.ID,
+		&post.Title,
+		&post.Content,
+		&post.CommentsAllowed,
+	)
 	if err != nil {
 		return model.Post{}, nil
 	}
@@ -78,7 +82,12 @@ func (pr *PostMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id
 
 func (pr *PostMemoryRepository) UpdatePostComments(ctx context.Context, id string, comments []*model.Comment) (model.Post, error) {
 	var post model.Post
-	err := pr.db.QueryRow(ctx, querries.UpdatePostCommentsStatus, id)
+	err := pr.db.QueryRow(ctx, querries.UpdatePostCommentsStatus, id).Scan(
+		&post.ID,
+		&post.Title,
+		&post.Content,
+		&post.CommentsAllowed,
+	)
 	if err != nil {
 		return model.Post{}, nil
 	}

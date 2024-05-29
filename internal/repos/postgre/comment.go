@@ -26,9 +26,9 @@ func (cr *CommentMemoryRepository) CreateComment(ctx context.Context, id, conten
 		return nil, err
 	}
 
-	var comments []*model.Comment
+	comments := []*model.Comment{}
 	for rows.Next() {
-		var comment *model.Comment
+		comment := &model.Comment{}
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
@@ -53,9 +53,9 @@ func (cr *CommentMemoryRepository) GetCommentByParentID(ctx context.Context, par
 	}
 	defer rows.Close()
 
-	var comments []*model.Comment
+	comments := []*model.Comment{}
 	for rows.Next() {
-		var comment *model.Comment
+		comment := &model.Comment{}
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
@@ -79,9 +79,9 @@ func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, post
 	}
 	defer rows.Close()
 
-	var comments []*model.Comment
+	comments := []*model.Comment{}
 	for rows.Next() {
-		var comment *model.Comment
+		comment := &model.Comment{}
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,

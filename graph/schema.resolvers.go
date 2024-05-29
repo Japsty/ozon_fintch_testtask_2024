@@ -7,6 +7,7 @@ package graph
 import (
 	"Ozon_testtask/internal/model"
 	"context"
+	"errors"
 	"fmt"
 )
 
@@ -80,6 +81,9 @@ func (r *queryResolver) Post(ctx context.Context, id string, _ int, _ int) (*mod
 
 	post, err := r.PostService.GetPostByPostID(ctxWithTimeout, id)
 	if err != nil {
+		if errors.Is(err, errors.New("not found")) {
+			return nil, err
+		}
 		r.Logger.Error("Post GetPostByPostID Error: ", err)
 		return nil, err
 	}

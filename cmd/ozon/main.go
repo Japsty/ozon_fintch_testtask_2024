@@ -12,6 +12,7 @@ import (
 	"context"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	"net/http"
@@ -76,12 +77,15 @@ func main() {
 
 	resolver := graph.NewResolver(ps, cs, logger)
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
-	//srv.Use(middleware.AccessLog(logger))
+	r := mux.NewRouter()
+	r.Use(func(next http.Handler) http.Handler {
+		return middleware.AccessLog(logger, next)
+	})
 
-	//http.Handle("/graphql", middleware.AccessLog(sugar, middleware.Auth(sugar, srv)))
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", middleware.AccessLog(logger, srv))
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
+
+	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	r.Handle("/query", middleware.AccessLog(logger, srv))
 
 	port := os.Getenv("PORT")
 	if port == "" {
