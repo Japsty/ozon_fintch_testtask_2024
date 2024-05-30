@@ -36,14 +36,13 @@ type Post {
 input NewComment{
   postId: UUID!,
   content: String!,
-  author: String!,
   parentCommentId: UUID
 }
 
 type Comment {
   id: UUID!
   content: String!
-  author: String!
+  authorID: String!
   postId: UUID!
   parentCommentId: UUID
   replies: [Comment]

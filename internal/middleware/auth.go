@@ -17,7 +17,7 @@ func Auth(logger *zap.SugaredLogger, next http.Handler) http.Handler {
 		authToken := r.Header.Get("Authorization")
 		if authToken == "" {
 			logger.Error(reqIDString + "Missing token header")
-			http.Error(w, "Missing token header", http.StatusUnauthorized)
+			next.ServeHTTP(w, r)
 			return
 		}
 

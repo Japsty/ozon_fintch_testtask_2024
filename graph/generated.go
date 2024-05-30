@@ -50,7 +50,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Comment struct {
-		Author          func(childComplexity int) int
+		AuthorID        func(childComplexity int) int
 		Content         func(childComplexity int) int
 		CreatedAt       func(childComplexity int) int
 		ID              func(childComplexity int) int
@@ -117,12 +117,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Comment.author":
-		if e.complexity.Comment.Author == nil {
+	case "Comment.authorID":
+		if e.complexity.Comment.AuthorID == nil {
 			break
 		}
 
-		return e.complexity.Comment.Author(childComplexity), true
+		return e.complexity.Comment.AuthorID(childComplexity), true
 
 	case "Comment.content":
 		if e.complexity.Comment.Content == nil {
@@ -668,8 +668,8 @@ func (ec *executionContext) fieldContext_Comment_content(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Comment_author(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Comment_author(ctx, field)
+func (ec *executionContext) _Comment_authorID(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Comment_authorID(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -682,7 +682,7 @@ func (ec *executionContext) _Comment_author(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Author, nil
+		return obj.AuthorID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -699,7 +699,7 @@ func (ec *executionContext) _Comment_author(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Comment_author(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Comment_authorID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Comment",
 		Field:      field,
@@ -837,8 +837,8 @@ func (ec *executionContext) fieldContext_Comment_replies(_ context.Context, fiel
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
-			case "author":
-				return ec.fieldContext_Comment_author(ctx, field)
+			case "authorID":
+				return ec.fieldContext_Comment_authorID(ctx, field)
 			case "postId":
 				return ec.fieldContext_Comment_postId(ctx, field)
 			case "parentCommentId":
@@ -1321,8 +1321,8 @@ func (ec *executionContext) fieldContext_Post_comments(_ context.Context, field 
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
-			case "author":
-				return ec.fieldContext_Comment_author(ctx, field)
+			case "authorID":
+				return ec.fieldContext_Comment_authorID(ctx, field)
 			case "postId":
 				return ec.fieldContext_Comment_postId(ctx, field)
 			case "parentCommentId":
@@ -1737,8 +1737,8 @@ func (ec *executionContext) fieldContext_Subscription_commentAdded(ctx context.C
 				return ec.fieldContext_Comment_id(ctx, field)
 			case "content":
 				return ec.fieldContext_Comment_content(ctx, field)
-			case "author":
-				return ec.fieldContext_Comment_author(ctx, field)
+			case "authorID":
+				return ec.fieldContext_Comment_authorID(ctx, field)
 			case "postId":
 				return ec.fieldContext_Comment_postId(ctx, field)
 			case "parentCommentId":
@@ -3545,7 +3545,7 @@ func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj in
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"postId", "content", "author", "parentCommentId"}
+	fieldsInOrder := [...]string{"postId", "content", "parentCommentId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3566,13 +3566,6 @@ func (ec *executionContext) unmarshalInputNewComment(ctx context.Context, obj in
 				return it, err
 			}
 			it.Content = data
-		case "author":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("author"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Author = data
 		case "parentCommentId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentCommentId"))
 			data, err := ec.unmarshalOUUID2ᚖstring(ctx, v)
@@ -3656,8 +3649,8 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "author":
-			out.Values[i] = ec._Comment_author(ctx, field, obj)
+		case "authorID":
+			out.Values[i] = ec._Comment_authorID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

@@ -26,7 +26,7 @@ func (cr *CommentInMemoryRepository) CreateComment(_ context.Context, id, conten
 	newComment := &model.Comment{
 		ID:              id,
 		Content:         content,
-		Author:          userID,
+		AuthorID:        userID,
 		PostID:          postID,
 		ParentCommentID: &parentCommentID,
 		CreatedAt:       time.Now().String(),

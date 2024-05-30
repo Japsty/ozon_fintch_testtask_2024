@@ -45,14 +45,9 @@ func (pr *PostMemoryRepository) GetAllPosts(ctx context.Context) ([]*model.Post,
 	return posts, nil
 }
 
-func (pr *PostMemoryRepository) CreatePost(ctx context.Context, id, title, content string, commentsAllowed bool) (model.Post, error) {
+func (pr *PostMemoryRepository) CreatePost(ctx context.Context, id, title, content, userID string, commentsAllowed bool) (model.Post, error) {
 	var post model.Post
 	var createdAtTime time.Time
-
-	userID, ok := ctx.Value("userID").(string)
-	if !ok {
-		return model.Post{}, errors.New("unauthorized")
-	}
 
 	err := pr.db.QueryRow(ctx, querries.CreatePost, id, title, content, userID, commentsAllowed).Scan(
 		&post.ID,
@@ -89,7 +84,7 @@ func (pr *PostMemoryRepository) GetPostByPostID(ctx context.Context, id string) 
 	return post, nil
 }
 
-func (pr *PostMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id string, commentsAllowed bool) (model.Post, error) {
+func (pr *PostMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id, userID string, commentsAllowed bool) (model.Post, error) {
 	var foundPost model.Post
 	var createdAtTime time.Time
 
@@ -103,11 +98,6 @@ func (pr *PostMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id
 	)
 	if err != nil {
 		return model.Post{}, nil
-	}
-
-	userID, ok := ctx.Value("userID").(string)
-	if !ok {
-		return model.Post{}, errors.New("unauthorized")
 	}
 
 	if foundPost.UserID != userID {

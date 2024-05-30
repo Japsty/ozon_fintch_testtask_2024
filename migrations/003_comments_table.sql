@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS comments
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX comments_post_id_index ON comments (post_id);
-CREATE INDEX comments_parent_comment_id_index ON comments (parent_comment_id);
+CREATE INDEX comments_post_id_index ON comments USING HASH (post_id);
+CREATE INDEX comments_parent_comment_id_index ON comments USING HASH (parent_comment_id);
 
 -- +goose Down
 DROP TABLE IF EXISTS comments;

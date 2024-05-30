@@ -33,7 +33,6 @@ func main() {
 	}(zapLogger)
 	logger := zapLogger.Sugar()
 
-	var ur model.UserRepo
 	var pr model.PostRepo
 	var cr model.CommentRepo
 
@@ -55,11 +54,9 @@ func main() {
 			logger.Fatal("Failed to up migration: ", err)
 		}
 
-		ur = postgre.NewUserRepository(postgresConnect)
 		pr = postgre.NewPostRepository(postgresConnect)
 		cr = postgre.NewCommentRepository(postgresConnect)
 	} else if storageType == "inmemory" {
-		ur = inmem.NewUserRepository()
 		pr = inmem.NewPostInMemoryRepository()
 		cr = inmem.NewCommentInMemoryRepository()
 	} else {
@@ -67,7 +64,7 @@ func main() {
 		return
 	}
 
-	ps := services.NewPostService(ur, pr, cr)
+	ps := services.NewPostService(pr, cr)
 	cs := services.NewCommentService(cr, pr)
 
 	resolver := graph.NewResolver(ps, cs, logger)
@@ -83,16 +80,15 @@ func main() {
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
 	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	r.Handle("/query", middleware.AccessLog(logger, srv))
+	r.Handle("/query", srv)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8081"
 	}
 
-	// err = router.Run("localhost:8080") - если на локальной машине
 	logger.Infof("Starting client on port: %s", port)
-	if err := http.ListenAndServe(":"+port, srv); err != nil {
+	if err := http.ListenAndServe(":"+port, r); err != nil {
 		logger.Fatal("Server failed to start", err)
 	}
 }

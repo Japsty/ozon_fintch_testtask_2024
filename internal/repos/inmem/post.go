@@ -37,7 +37,7 @@ func (pr *PostInMemoryRepository) GetAllPosts(_ context.Context) ([]*model.Post,
 	return result, nil
 }
 
-func (pr *PostInMemoryRepository) CreatePost(_ context.Context, id, title, content string, commentsAllowed bool) (model.Post, error) {
+func (pr *PostInMemoryRepository) CreatePost(_ context.Context, id, title, content, userID string, commentsAllowed bool) (model.Post, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 
@@ -67,7 +67,7 @@ func (pr *PostInMemoryRepository) GetPostByPostID(_ context.Context, id string) 
 	return *v, nil
 }
 
-func (pr *PostInMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id string, commentsAllowed bool) (model.Post, error) {
+func (pr *PostInMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id, userID string, commentsAllowed bool) (model.Post, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 

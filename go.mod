@@ -12,7 +12,6 @@ require (
 	github.com/pressly/goose/v3 v3.20.0
 	github.com/vektah/gqlparser/v2 v2.5.12
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.21.0
 )
 
 require (
@@ -27,6 +26,7 @@ require (
 	github.com/sethvargo/go-retry v0.2.4 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 )

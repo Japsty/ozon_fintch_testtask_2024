@@ -22,7 +22,7 @@ func NewCommentService(commentRepo model.CommentRepo, postRepo model.PostRepo) *
 	return &CommentService{CommentRepo: commentRepo, PostRepo: postRepo}
 }
 
-func (cs *CommentService) CommentPost(ctx context.Context, userID string, postID string, commentText string) ([]*model.Comment, error) {
+func (cs *CommentService) CommentPost(ctx context.Context, postID, commentText string) ([]*model.Comment, error) {
 	commentID := uuid.NewString()
 	post, err := cs.PostRepo.GetPostByPostID(ctx, postID)
 	if err != nil {
@@ -31,6 +31,11 @@ func (cs *CommentService) CommentPost(ctx context.Context, userID string, postID
 
 	if !post.CommentsAllowed {
 		return nil, errCommentsNotAllowed
+	}
+
+	userID, ok := ctx.Value("userID").(string)
+	if !ok {
+		return nil, errors.New("unauthorized")
 	}
 
 	_, err = cs.CommentRepo.CreateComment(ctx, commentID, userID, commentText, postID, "")

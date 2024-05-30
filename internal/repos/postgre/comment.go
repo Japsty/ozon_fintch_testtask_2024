@@ -34,7 +34,7 @@ func (cr *CommentMemoryRepository) CreateComment(ctx context.Context, id, conten
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
-			&comment.Author,
+			&comment.AuthorID,
 			&comment.PostID,
 			&comment.ParentCommentID,
 			&createdAtTime,
@@ -62,7 +62,7 @@ func (cr *CommentMemoryRepository) GetCommentByParentID(ctx context.Context, par
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
-			&comment.Author,
+			&comment.AuthorID,
 			&comment.PostID,
 			&comment.ParentCommentID,
 			&createdAtTime,
@@ -90,7 +90,7 @@ func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, post
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
-			&comment.Author,
+			&comment.AuthorID,
 			&comment.PostID,
 			&comment.ParentCommentID,
 			&createdAtTime,
@@ -118,7 +118,7 @@ func (cr *CommentMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Cont
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
-			&comment.Author,
+			&comment.AuthorID,
 			&comment.PostID,
 			&comment.ParentCommentID,
 			&createdAtTime,

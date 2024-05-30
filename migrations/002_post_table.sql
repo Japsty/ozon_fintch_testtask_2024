@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS posts
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-CREATE INDEX posts_id_index ON posts USING btree (id);
+CREATE INDEX posts_id_index ON posts USING HASH (id);
 
 -- +goose Down
 DROP TABLE IF EXISTS posts;

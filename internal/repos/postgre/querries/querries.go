@@ -34,6 +34,7 @@ const (
 		SELECT id, title, content, user_id, comments_allowed, created_at
 		FROM posts;
 	`
+
 	CreatePost = `
 		INSERT INTO posts (id, title, content, user_id, comments_allowed,created_at)
 		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
