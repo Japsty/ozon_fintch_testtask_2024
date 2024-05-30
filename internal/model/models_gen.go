@@ -7,7 +7,7 @@ type Comment struct {
 	Content   string     `json:"content"`
 	AuthorID  string     `json:"authorID"`
 	PostID    string     `json:"postID"`
-	ParentID  string     `json:"parentID"`
+	ParentID  *string    `json:"parentID,omitempty"`
 	Replies   []*Comment `json:"replies,omitempty"`
 	CreatedAt string     `json:"createdAt"`
 }
@@ -16,9 +16,9 @@ type Mutation struct {
 }
 
 type NewComment struct {
-	PostID   string `json:"postID"`
-	ParentID string `json:"parentID"`
-	Content  string `json:"content"`
+	PostID   string  `json:"postID"`
+	ParentID *string `json:"parentID,omitempty"`
+	Content  string  `json:"content"`
 }
 
 type NewPost struct {

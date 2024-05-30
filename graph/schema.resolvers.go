@@ -38,7 +38,7 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.NewComm
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, TimeoutTime)
 	defer cancel()
 
-	postComments, err := r.CommentService.CommentPost(ctxWithTimeout, comment.ParentID, comment.Content, comment.ParentID)
+	postComments, err := r.CommentService.CommentPost(ctxWithTimeout, comment.PostID, comment.Content, *comment.ParentID)
 	if err != nil {
 		r.Logger.Error("AddComment Resolver CommentPost Error: ", err)
 		return nil, err

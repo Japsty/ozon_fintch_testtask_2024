@@ -57,7 +57,8 @@ func (ps *PostService) AddPost(ctx context.Context, title, text string, status b
 func (ps *PostService) GetPostByPostID(ctx context.Context, postID string) (model.Post, error) {
 	post, err := ps.PostRepo.GetPostByPostID(ctx, postID)
 	if err != nil {
-		if errors.Is(err, errors.New("no rows in result set")) {
+		errNoRows := errors.New("no rows in result set")
+		if errors.As(err, &errNoRows) {
 			return model.Post{}, errNotFound
 		}
 		return model.Post{}, err

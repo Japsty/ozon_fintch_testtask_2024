@@ -26,21 +26,9 @@ services:
     ports:
       - "8081:8081"
     environment:
-      STORAGE : "postgres"
+#      STORAGE : "postgres"
+      STORAGE : "inmemory"
       PORT: '8081'
-#
-#  redditclone:
-#    image: 6pract
-#    restart: always
-#    depends_on:
-#      - mysqlDB
-#      - mongoDB
-#    networks:
-#      - service_network
-#    ports:
-#      - "8081:8081"
-#    environment:
-#      PORT: '8081'
 
 networks:
   service_network:

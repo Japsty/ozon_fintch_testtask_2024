@@ -76,7 +76,7 @@ func (cr *CommentMemoryRepository) GetCommentByParentID(ctx context.Context, par
 	return comments, nil
 }
 
-func (cr *CommentMemoryRepository) loadRepliesForComment(ctx context.Context, comment *model.Comment) error {
+func (cr *CommentMemoryRepository) getRepliesForComment(ctx context.Context, comment *model.Comment) error {
 	rows, err := cr.db.Query(ctx, querries.GetCommentsByParentID, comment.ID)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func (cr *CommentMemoryRepository) loadRepliesForComment(ctx context.Context, co
 
 	for _, reply := range replies {
 		comment.Replies = append(comment.Replies, reply)
-		if err = cr.loadRepliesForComment(ctx, reply); err != nil {
+		if err = cr.getRepliesForComment(ctx, reply); err != nil {
 			return err
 		}
 	}
@@ -137,7 +137,7 @@ func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, post
 	}
 
 	for _, comment := range comments {
-		if err := cr.loadRepliesForComment(ctx, comment); err != nil {
+		if err := cr.getRepliesForComment(ctx, comment); err != nil {
 			return nil, err
 		}
 	}

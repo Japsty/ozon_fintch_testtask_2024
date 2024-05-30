@@ -35,7 +35,7 @@ type Post {
 
 input NewComment{
   postID: UUID!
-  parentID:UUID!
+  parentID:UUID
   content: String!
 }
 
@@ -44,7 +44,7 @@ type Comment {
   content: String!
   authorID: String!
   postID: UUID!
-  parentID: UUID!
+  parentID: UUID
   replies: [Comment]
   createdAt: DateTime!
 }

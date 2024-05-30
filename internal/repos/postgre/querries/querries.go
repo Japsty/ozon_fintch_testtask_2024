@@ -16,7 +16,7 @@ const (
 	GetCommentsByPostID = `
 		SELECT id, content, author_id, post_id, parent_id, created_at
 		FROM comments
-		WHERE post_id = $1 AND parent_id = "";
+		WHERE post_id = $1 AND parent_id = '';
     `
 
 	GetCommentsByPostIDPaginated = `

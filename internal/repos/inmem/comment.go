@@ -28,7 +28,7 @@ func (cr *CommentInMemoryRepository) CreateComment(_ context.Context, id, conten
 		Content:   content,
 		AuthorID:  userID,
 		PostID:    postID,
-		ParentID:  parentCommentID,
+		ParentID:  &parentCommentID,
 		CreatedAt: time.Now().String(),
 		Replies:   []*model.Comment{},
 	}
@@ -42,10 +42,10 @@ func (cr *CommentInMemoryRepository) GetCommentByParentID(_ context.Context, par
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
-	comments := []*model.Comment{}
+	var comments []*model.Comment
 	for _, comms := range cr.data {
 		for _, comm := range comms {
-			if comm.ParentID == parentID {
+			if *comm.ParentID == parentID {
 				comments = append(comments, comm)
 			}
 		}
@@ -54,11 +54,34 @@ func (cr *CommentInMemoryRepository) GetCommentByParentID(_ context.Context, par
 	return comments, nil
 }
 
+func (cr *CommentInMemoryRepository) getRepliesForComment(ctx context.Context, comment *model.Comment) error {
+	cr.mutex.RLock()
+	defer cr.mutex.RUnlock()
+
+	var replies []*model.Comment
+	for _, comms := range cr.data {
+		for _, comm := range comms {
+			if *comm.ParentID == comment.ID {
+				replies = append(replies, comm)
+			}
+		}
+	}
+
+	for _, reply := range replies {
+		comment.Replies = append(comment.Replies, reply)
+		if err := cr.getRepliesForComment(ctx, reply); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (cr *CommentInMemoryRepository) GetCommentsByPostID(_ context.Context, postID string) ([]*model.Comment, error) {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
-	comments := []*model.Comment{}
+	var comments []*model.Comment
 	for _, comms := range cr.data {
 		for _, comm := range comms {
 			if comm.PostID == postID {
@@ -74,7 +97,7 @@ func (cr *CommentInMemoryRepository) GetCommentsByPostIDPaginated(_ context.Cont
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
-	comments := []*model.Comment{}
+	var comments []*model.Comment
 	for _, comms := range cr.data {
 		for _, comm := range comms {
 			if comm.PostID == postID {
