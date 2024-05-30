@@ -13,6 +13,10 @@ import (
 
 // AddPost is the resolver for the addPost field.
 func (r *mutationResolver) AddPost(ctx context.Context, post model.NewPost) (*model.Post, error) {
+	if len(post.Content) > 2000 {
+		return nil, errors.New("maximum content length is 2000")
+	}
+
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, TimeoutTime)
 	defer cancel()
 
@@ -27,10 +31,14 @@ func (r *mutationResolver) AddPost(ctx context.Context, post model.NewPost) (*mo
 
 // AddComment is the resolver for the addComment field.
 func (r *mutationResolver) AddComment(ctx context.Context, comment model.NewComment) (*model.Post, error) {
+	if len(comment.Content) > 2000 {
+		return nil, errors.New("maximum content length is 2000")
+	}
+
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, TimeoutTime)
 	defer cancel()
 
-	postComments, err := r.CommentService.CommentPost(ctxWithTimeout, comment.PostID, comment.Content)
+	postComments, err := r.CommentService.CommentPost(ctxWithTimeout, comment.ParentID, comment.Content, comment.ParentID)
 	if err != nil {
 		r.Logger.Error("AddComment Resolver CommentPost Error: ", err)
 		return nil, err

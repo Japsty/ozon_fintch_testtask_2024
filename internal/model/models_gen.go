@@ -3,22 +3,22 @@
 package model
 
 type Comment struct {
-	ID              string     `json:"id"`
-	Content         string     `json:"content"`
-	AuthorID        string     `json:"authorID"`
-	PostID          string     `json:"postId"`
-	ParentCommentID *string    `json:"parentCommentId,omitempty"`
-	Replies         []*Comment `json:"replies,omitempty"`
-	CreatedAt       string     `json:"createdAt"`
+	ID        string     `json:"id"`
+	Content   string     `json:"content"`
+	AuthorID  string     `json:"authorID"`
+	PostID    string     `json:"postID"`
+	ParentID  string     `json:"parentID"`
+	Replies   []*Comment `json:"replies,omitempty"`
+	CreatedAt string     `json:"createdAt"`
 }
 
 type Mutation struct {
 }
 
 type NewComment struct {
-	PostID          string  `json:"postId"`
-	Content         string  `json:"content"`
-	ParentCommentID *string `json:"parentCommentId,omitempty"`
+	PostID   string `json:"postID"`
+	ParentID string `json:"parentID"`
+	Content  string `json:"content"`
 }
 
 type NewPost struct {
@@ -31,7 +31,7 @@ type Post struct {
 	ID              string     `json:"id"`
 	Title           string     `json:"title"`
 	Content         string     `json:"content"`
-	UserID          string     `json:"userId"`
+	UserID          string     `json:"userID"`
 	Comments        []*Comment `json:"comments"`
 	CommentsAllowed bool       `json:"commentsAllowed"`
 	CreatedAt       string     `json:"createdAt"`

@@ -38,7 +38,7 @@ func (ps *PostService) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 	return posts, nil
 }
 
-func (ps *PostService) AddPost(ctx context.Context, Title, Text string, status bool) (model.Post, error) {
+func (ps *PostService) AddPost(ctx context.Context, title, text string, status bool) (model.Post, error) {
 	newPostID := uuid.NewString()
 
 	userID, ok := ctx.Value("userID").(string)
@@ -46,7 +46,7 @@ func (ps *PostService) AddPost(ctx context.Context, Title, Text string, status b
 		return model.Post{}, errors.New("unauthorized")
 	}
 
-	post, err := ps.PostRepo.CreatePost(ctx, newPostID, Title, Text, userID, status)
+	post, err := ps.PostRepo.CreatePost(ctx, newPostID, title, text, userID, status)
 	if err != nil {
 		return model.Post{}, err
 	}

@@ -4,23 +4,23 @@ const (
 	// COMMENTS QUERRIES---------------------------------
 
 	CreateComment = `
-		INSERT INTO comments(id, content, author_id, post_id, parent_comment_id, created_at)
+		INSERT INTO comments(id, content, author_id, post_id, parent_id, created_at)
 		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP);
 	`
 	GetCommentsByParentID = `
-		SELECT id, content, author_id, post_id, parent_comment_id, created_at
+		SELECT id, content, author_id, post_id, parent_id, created_at
 		FROM comments
-		WHERE parent_comment_id = $1;
+		WHERE parent_id = $1;
     `
 
 	GetCommentsByPostID = `
-		SELECT id, content, author_id, post_id, parent_comment_id, created_at
+		SELECT id, content, author_id, post_id, parent_id, created_at
 		FROM comments
-		WHERE post_id = $1;
+		WHERE post_id = $1 AND parent_id = "";
     `
 
 	GetCommentsByPostIDPaginated = `
-		SELECT id, content, author_id, post_id, parent_comment_id, created_at
+		SELECT id, content, author_id, post_id, parent_id, created_at
 		FROM comments
 		WHERE post_id = $1
 		ORDER BY created_at DESC

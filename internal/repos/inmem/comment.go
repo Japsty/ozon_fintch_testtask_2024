@@ -24,13 +24,13 @@ func (cr *CommentInMemoryRepository) CreateComment(_ context.Context, id, conten
 	defer cr.mutex.Unlock()
 
 	newComment := &model.Comment{
-		ID:              id,
-		Content:         content,
-		AuthorID:        userID,
-		PostID:          postID,
-		ParentCommentID: &parentCommentID,
-		CreatedAt:       time.Now().String(),
-		Replies:         []*model.Comment{},
+		ID:        id,
+		Content:   content,
+		AuthorID:  userID,
+		PostID:    postID,
+		ParentID:  parentCommentID,
+		CreatedAt: time.Now().String(),
+		Replies:   []*model.Comment{},
 	}
 
 	cr.data[postID] = append(cr.data[postID], newComment)
@@ -45,7 +45,7 @@ func (cr *CommentInMemoryRepository) GetCommentByParentID(_ context.Context, par
 	comments := []*model.Comment{}
 	for _, comms := range cr.data {
 		for _, comm := range comms {
-			if *comm.ParentCommentID == parentID {
+			if comm.ParentID == parentID {
 				comments = append(comments, comm)
 			}
 		}

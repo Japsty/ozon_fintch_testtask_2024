@@ -11,6 +11,7 @@ import (
 	"Ozon_testtask/pkg/storage/migrate"
 	"context"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -78,6 +79,7 @@ func main() {
 	})
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
+	srv.AddTransport(&transport.Websocket{})
 
 	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	r.Handle("/query", srv)

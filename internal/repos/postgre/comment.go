@@ -36,7 +36,7 @@ func (cr *CommentMemoryRepository) CreateComment(ctx context.Context, id, conten
 			&comment.Content,
 			&comment.AuthorID,
 			&comment.PostID,
-			&comment.ParentCommentID,
+			&comment.ParentID,
 			&createdAtTime,
 		); err != nil {
 			return nil, err
@@ -64,7 +64,7 @@ func (cr *CommentMemoryRepository) GetCommentByParentID(ctx context.Context, par
 			&comment.Content,
 			&comment.AuthorID,
 			&comment.PostID,
-			&comment.ParentCommentID,
+			&comment.ParentID,
 			&createdAtTime,
 		); err != nil {
 			return nil, err
@@ -74,6 +74,41 @@ func (cr *CommentMemoryRepository) GetCommentByParentID(ctx context.Context, par
 	}
 
 	return comments, nil
+}
+
+func (cr *CommentMemoryRepository) loadRepliesForComment(ctx context.Context, comment *model.Comment) error {
+	rows, err := cr.db.Query(ctx, querries.GetCommentsByParentID, comment.ID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	replies := []*model.Comment{}
+	for rows.Next() {
+		reply := &model.Comment{}
+		var createdAtTime time.Time
+		if err := rows.Scan(
+			&reply.ID,
+			&reply.Content,
+			&reply.AuthorID,
+			&reply.PostID,
+			&reply.ParentID,
+			&createdAtTime,
+		); err != nil {
+			return err
+		}
+		reply.CreatedAt = createdAtTime.String()
+		replies = append(replies, reply)
+	}
+
+	for _, reply := range replies {
+		comment.Replies = append(comment.Replies, reply)
+		if err = cr.loadRepliesForComment(ctx, reply); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
@@ -92,13 +127,19 @@ func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, post
 			&comment.Content,
 			&comment.AuthorID,
 			&comment.PostID,
-			&comment.ParentCommentID,
+			&comment.ParentID,
 			&createdAtTime,
 		); err != nil {
 			return nil, err
 		}
 		comment.CreatedAt = createdAtTime.String()
 		comments = append(comments, comment)
+	}
+
+	for _, comment := range comments {
+		if err := cr.loadRepliesForComment(ctx, comment); err != nil {
+			return nil, err
+		}
 	}
 
 	return comments, nil
@@ -120,7 +161,7 @@ func (cr *CommentMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Cont
 			&comment.Content,
 			&comment.AuthorID,
 			&comment.PostID,
-			&comment.ParentCommentID,
+			&comment.ParentID,
 			&createdAtTime,
 		); err != nil {
 			return nil, err

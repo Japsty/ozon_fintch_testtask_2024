@@ -17,8 +17,8 @@ type Mutation {
 }
 
 input NewPost{
-  title: String!,
-  content: String!,
+  title: String!
+  content: String!
   commentsAllowed: Boolean!
 }
 
@@ -26,7 +26,7 @@ type Post {
   id: UUID!
   title: String!
   content: String!
-  userId: UUID!
+  userID: UUID!
   comments: [Comment]!
   commentsAllowed: Boolean!
   createdAt: DateTime!
@@ -34,17 +34,17 @@ type Post {
 
 
 input NewComment{
-  postId: UUID!,
-  content: String!,
-  parentCommentId: UUID
+  postID: UUID!
+  parentID:UUID!
+  content: String!
 }
 
 type Comment {
   id: UUID!
   content: String!
   authorID: String!
-  postId: UUID!
-  parentCommentId: UUID
+  postID: UUID!
+  parentID: UUID!
   replies: [Comment]
   createdAt: DateTime!
 }
