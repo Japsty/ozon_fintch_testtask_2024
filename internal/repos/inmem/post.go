@@ -80,17 +80,3 @@ func (pr *PostInMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, 
 
 	return post, nil
 }
-
-func (pr *PostInMemoryRepository) UpdatePostComments(ctx context.Context, id string, comms []*model.Comment) (model.Post, error) {
-	pr.mutex.Lock()
-	defer pr.mutex.Unlock()
-
-	post, err := pr.GetPostByPostID(ctx, id)
-	if err != nil {
-		return model.Post{}, err
-	}
-	post.Comments = comms
-	pr.data[id] = &post
-
-	return post, nil
-}

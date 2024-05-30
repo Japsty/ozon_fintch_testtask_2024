@@ -4,25 +4,25 @@ import (
 	"Ozon_testtask/internal/model"
 	"Ozon_testtask/internal/repos/postgre/querries"
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"database/sql"
 	"time"
 )
 
 type CommentMemoryRepository struct {
-	db *pgxpool.Pool
+	db *sql.DB
 }
 
-func NewCommentRepository(db *pgxpool.Pool) *CommentMemoryRepository {
+func NewCommentRepository(db *sql.DB) *CommentMemoryRepository {
 	return &CommentMemoryRepository{db: db}
 }
 
 func (cr *CommentMemoryRepository) CreateComment(ctx context.Context, id, content, userID, postID, parentCommentID string) ([]*model.Comment, error) {
-	_, err := cr.db.Exec(ctx, querries.CreateComment, id, content, userID, postID, parentCommentID)
+	_, err := cr.db.ExecContext(ctx, querries.CreateComment, id, content, userID, postID, parentCommentID)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := cr.db.Query(ctx, querries.GetCommentsByPostID, postID)
+	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostID, postID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (cr *CommentMemoryRepository) CreateComment(ctx context.Context, id, conten
 }
 
 func (cr *CommentMemoryRepository) GetCommentByParentID(ctx context.Context, parentID string) ([]*model.Comment, error) {
-	rows, err := cr.db.Query(ctx, querries.GetCommentsByParentID, parentID)
+	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByParentID, parentID)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (cr *CommentMemoryRepository) GetCommentByParentID(ctx context.Context, par
 }
 
 func (cr *CommentMemoryRepository) getRepliesForComment(ctx context.Context, comment *model.Comment) error {
-	rows, err := cr.db.Query(ctx, querries.GetCommentsByParentID, comment.ID)
+	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByParentID, comment.ID)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (cr *CommentMemoryRepository) getRepliesForComment(ctx context.Context, com
 }
 
 func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
-	rows, err := cr.db.Query(ctx, querries.GetCommentsByPostID, postID)
+	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostID, postID)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, post
 }
 
 func (cr *CommentMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
-	rows, err := cr.db.Query(ctx, querries.GetCommentsByPostIDPaginated, postID, limit, offset)
+	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostIDPaginated, postID, limit, offset)
 	if err != nil {
 		return nil, err
 	}

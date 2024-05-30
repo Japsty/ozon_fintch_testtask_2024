@@ -4,21 +4,20 @@ import (
 	"Ozon_testtask/internal/model"
 	"Ozon_testtask/internal/repos/postgre/querries"
 	"context"
+	"database/sql"
 	"errors"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 )
 
 type PostMemoryRepository struct {
-	db *pgxpool.Pool
+	db *sql.DB
 }
 
-func NewPostRepository(db *pgxpool.Pool) *PostMemoryRepository {
+func NewPostRepository(db *sql.DB) *PostMemoryRepository {
 	return &PostMemoryRepository{db: db}
 }
-
 func (pr *PostMemoryRepository) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
-	rows, err := pr.db.Query(ctx, querries.GetAllPosts)
+	rows, err := pr.db.QueryContext(ctx, querries.GetAllPosts)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +48,7 @@ func (pr *PostMemoryRepository) CreatePost(ctx context.Context, id, title, conte
 	var post model.Post
 	var createdAtTime time.Time
 
-	err := pr.db.QueryRow(ctx, querries.CreatePost, id, title, content, userID, commentsAllowed).Scan(
+	err := pr.db.QueryRowContext(ctx, querries.CreatePost, id, title, content, userID, commentsAllowed).Scan(
 		&post.ID,
 		&post.Title,
 		&post.Content,
@@ -68,7 +67,7 @@ func (pr *PostMemoryRepository) CreatePost(ctx context.Context, id, title, conte
 func (pr *PostMemoryRepository) GetPostByPostID(ctx context.Context, id string) (model.Post, error) {
 	var post model.Post
 	var createdAtTime time.Time
-	err := pr.db.QueryRow(ctx, querries.GetPostByID, id).Scan(
+	err := pr.db.QueryRowContext(ctx, querries.GetPostByID, id).Scan(
 		&post.ID,
 		&post.Title,
 		&post.Content,
@@ -88,7 +87,7 @@ func (pr *PostMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id
 	var foundPost model.Post
 	var createdAtTime time.Time
 
-	err := pr.db.QueryRow(ctx, querries.GetPostByID, id).Scan(
+	err := pr.db.QueryRowContext(ctx, querries.GetPostByID, id).Scan(
 		&foundPost.ID,
 		&foundPost.Title,
 		&foundPost.Content,
@@ -105,7 +104,7 @@ func (pr *PostMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id
 	}
 
 	var post model.Post
-	err = pr.db.QueryRow(ctx, querries.UpdatePostCommentsStatus, id, commentsAllowed).Scan(
+	err = pr.db.QueryRowContext(ctx, querries.UpdatePostCommentsStatus, id, commentsAllowed).Scan(
 		&post.ID,
 		&post.Title,
 		&post.Content,
@@ -117,26 +116,6 @@ func (pr *PostMemoryRepository) UpdatePostCommentsStatus(ctx context.Context, id
 		return model.Post{}, nil
 	}
 	post.CreatedAt = createdAtTime.String()
-
-	return post, nil
-}
-
-func (pr *PostMemoryRepository) UpdatePostComments(ctx context.Context, id string, comments []*model.Comment) (model.Post, error) {
-	var post model.Post
-	var createdAtTime time.Time
-
-	err := pr.db.QueryRow(ctx, querries.UpdatePostCommentsStatus, id).Scan(
-		&post.ID,
-		&post.Title,
-		&post.Content,
-		&post.CommentsAllowed,
-		&createdAtTime,
-	)
-	if err != nil {
-		return model.Post{}, nil
-	}
-	post.CreatedAt = createdAtTime.String()
-	post.Comments = comments
 
 	return post, nil
 }

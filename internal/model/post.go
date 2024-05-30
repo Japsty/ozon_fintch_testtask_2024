@@ -7,7 +7,6 @@ type PostRepo interface {
 	CreatePost(context.Context, string, string, string, string, bool) (Post, error)
 	GetPostByPostID(context.Context, string) (Post, error)
 	UpdatePostCommentsStatus(context.Context, string, string, bool) (Post, error)
-	UpdatePostComments(context.Context, string, []*Comment) (Post, error)
 }
 
 type PostService interface {

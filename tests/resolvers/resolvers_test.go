@@ -1,70 +1,43 @@
 package resolvers
 
 import (
-	"Ozon_testtask/internal/services"
+	"Ozon_testtask/graph"
+	"Ozon_testtask/internal/model"
+	mocks "Ozon_testtask/tests/mocks/services"
 	"bytes"
-	"errors"
+	"github.com/99designs/gqlgen/client"
+	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 )
 
-var mockPost = models.Post{
-	Score: 1,
-	Views: 400,
-	Type:  "text",
-	Title: "MockPost",
-	Author: models.Author{
-		Username: "testuser",
-		UserID:   "127b3a39-e061-434b-bcbd-d2362abeb4bc",
-	},
-	Category: "music",
-	Text:     "MockPost",
-	Votes: []models.PostVote{
-		{
-			UserID: "127b3a39-e061-434b-bcbd-d2362abeb4bc",
-			Vote:   1,
-		},
-	},
-	Comments: []models.Comment{
-		{
-			Created: time.Now(),
-			Author: models.Author{
-				Username: "testuser",
-				UserID:   "127b3a39-e061-434b-bcbd-d2362abeb4bc",
-			},
-			Body:   "MockComment",
-			ID:     "782a81b7-fbcb-4959-a818-3a86cfaa5686",
-			PostID: "1e8250d4-9500-4f91-b1eb-de666774daa6",
-		},
-	},
-	Created:          time.Now(),
-	UpvotePercentage: 100,
-	URL:              "",
-	ID:               "1e8250d4-9500-4f91-b1eb-de666774daa6",
+var mockNewPost = model.NewPost{
+	Title:           "mockTitle",
+	Content:         "mockContent",
+	CommentsAllowed: true,
 }
 
-var mockSession = &models.Session{
-	ID:       1,
-	Username: "testuser",
-	UserID:   "127b3a39-e061-434b-bcbd-d2362abeb4bc",
-	Token:    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTQ4Mzg1MDAsInVzZXIiOnsiaWQiOiIxMmVmYWExZi04MjgyLTQzODctOWJkYi03OWU2NDBjYzAxNGMiLCJ1c2VybmFtZSI6InRlc3R1c2VyIn19.IHd9A9IK9OR5RDWyyJMMZVoyH-ji3tf5yydTjsArHvc",
-	Exp:      20000000000,
+var mockPost = model.Post{
+	ID:              "1",
+	Title:           mockNewPost.Title,
+	Content:         mockNewPost.Content,
+	CommentsAllowed: mockNewPost.CommentsAllowed,
+	CreatedAt:       time.Now().String(),
 }
 
 type mockRepoResp struct {
 	mockPost  interface{}
 	mockError error
 }
-type mockSessionResp struct {
-	mockSession *models.Session
-	mockError   error
-}
+
+//	type mockSessionResp struct {
+//		mockSession *models.Session
+//		mockError   error
+//	}
 type mockRequest struct {
 	mockRequestMethod        string
 	mockRequestURL           string
@@ -73,162 +46,80 @@ type mockRequest struct {
 }
 
 type testCase struct {
-	id              int
-	name            string
-	mockRequest     mockRequest
-	mockRepoResp    mockRepoResp
-	mockSessionResp mockSessionResp
-	callRepo        bool
-	breakWrite      bool
-	expectedStatus  int
+	id             int
+	name           string
+	mockRequest    mockRequest
+	mockRepoResp   mockRepoResp
+	expectedStatus int
 }
 
-func TestPostHandlerIndex(t *testing.T) {
-	template1 := template.Must(template.ParseGlob("../../static/html/*"))
-	template2 := template.Must(template.ParseGlob("../mockStatic/html/*"))
-	test := []struct {
-		id             int
-		name           string
-		template       *template.Template
-		expectedStatus int
-	}{
-		{
-			id:             1,
-			name:           "Success",
-			template:       template1,
-			expectedStatus: http.StatusOK,
-		},
-		{
-			id:             2,
-			name:           "Error",
-			template:       template2,
-			expectedStatus: http.StatusInternalServerError,
-		},
-	}
-
-	mockPostRepo := new(repomocks.MockPostRepo)
-	mockUserRepo := new(repomocks.MockUserRepo)
-	mockCommentRepo := new(repomocks.MockCommentRepo)
-
-	mockPostService := services.NewPostService(mockUserRepo, mockPostRepo, mockCommentRepo)
-	mockSessionService := new(servicemocks.SessionServiceMock)
-
+func TestShouldAddPost(t *testing.T) {
+	mockPostService := new(mocks.PostServiceMock)
+	mockCommentService := new(mocks.CommentServiceMock)
 	zapLogger, err := zap.NewProduction()
 	if err != nil {
 		t.Fatal(err)
 	}
 	logger := zapLogger.Sugar()
 
-	for _, tc := range test {
-		t.Run(tc.name, func(t *testing.T) {
-			postHandler := handlers.NewPostHandler(mockSessionService, mockPostService, logger, tc.template)
+	resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
 
-			req, err := http.NewRequest("GET", "/", strings.NewReader(""))
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			rr := httptest.NewRecorder()
-
-			postHandler.Index(rr, req)
-
-			assert.Equal(t, tc.expectedStatus, rr.Code)
-		})
-	}
-}
-
-func TestPostHandlerGetAllPosts(t *testing.T) {
-	mockPost2 := mockPost
-	mockPost2.Score = 2
-
-	testCases := []testCase{
-		{
-			id:   1,
-			name: "Success",
-			mockRequest: mockRequest{
-				mockRequestMethod: "GET",
-				mockRequestURL:    "/api/posts/",
-				mockRequestBody:   strings.NewReader(""),
-			},
-			mockRepoResp: mockRepoResp{
-				mockPost:  []models.Post{mockPost, mockPost2},
-				mockError: nil,
-			},
-			callRepo:       true,
-			expectedStatus: http.StatusOK,
-		},
-		{
-			id:   2,
-			name: "Error",
-			mockRequest: mockRequest{
-				mockRequestMethod: "GET",
-				mockRequestURL:    "/api/posts/",
-				mockRequestBody:   strings.NewReader(""),
-			},
-			mockRepoResp: mockRepoResp{
-				mockPost:  []models.Post{},
-				mockError: errors.New("Error"),
-			},
-			callRepo:       true,
-			expectedStatus: http.StatusInternalServerError,
-		},
-		{
-			id:   3,
-			name: "Encode Error",
-			mockRequest: mockRequest{
-				mockRequestMethod: "GET",
-				mockRequestURL:    "/api/posts/",
-				mockRequestBody:   strings.NewReader(""),
-			},
-			mockRepoResp: mockRepoResp{
-				mockPost:  []models.Post{},
-				mockError: nil,
-			},
-			callRepo:       true,
-			breakWrite:     true,
-			expectedStatus: http.StatusInternalServerError,
-		},
+	newPost := model.NewPost{
+		Title:           "mockTitle",
+		Content:         "mockContent",
+		CommentsAllowed: true,
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			mockPostRepo := new(repomocks.MockPostRepo)
-			mockUserRepo := new(repomocks.MockUserRepo)
-			mockCommentRepo := new(repomocks.MockCommentRepo)
-
-			mockPostService := services.NewPostService(mockUserRepo, mockPostRepo, mockCommentRepo)
-			mockSessionService := new(servicemocks.SessionServiceMock)
-
-			zapLogger, err := zap.NewProduction()
-			if err != nil {
-				t.Fatal(err)
-			}
-			logger := zapLogger.Sugar()
-
-			templates := template.Must(template.ParseGlob("../../static/html/*"))
-
-			mockPostRepo.On("GetAllPosts", mock.AnythingOfType("*context.timerCtx")).Return(tc.mockRepoResp.mockPost, tc.mockRepoResp.mockError)
-			postHandler := handlers.NewPostHandler(mockSessionService, mockPostService, logger, templates)
-
-			req, err := http.NewRequest(tc.mockRequest.mockRequestMethod, tc.mockRequest.mockRequestURL, tc.mockRequest.mockRequestBody)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			mockWriter := &errorResponseWriter{}
-			rr := httptest.NewRecorder()
-
-			if tc.breakWrite {
-				postHandler.GetAllPosts(mockWriter, req)
-				assert.Equal(t, tc.expectedStatus, mockWriter.Code)
-			} else {
-				postHandler.GetAllPosts(rr, req)
-				assert.Equal(t, tc.expectedStatus, rr.Code)
-			}
-
-			if tc.callRepo {
-				mockPostRepo.AssertCalled(t, "GetAllPosts", mock.Anything)
-			}
-		})
+	createdPost := model.Post{
+		ID:              "1",
+		Title:           newPost.Title,
+		Content:         newPost.Content,
+		CommentsAllowed: newPost.CommentsAllowed,
+		CreatedAt:       time.Now().String(),
 	}
+
+	mockPostService.On("AddPost", mock.Anything, newPost.Title, newPost.Content, newPost.CommentsAllowed).Return(createdPost, nil)
+
+	c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+
+	q := `mutation AddPost {
+		addPost(
+			post: { title: "mockTitle", content: "mockContent", commentsAllowed: true }
+		) {
+			id
+			title
+			content
+			userID
+			commentsAllowed
+			createdAt
+		}
+	}
+	`
+
+	var response struct {
+		Data struct {
+			AddPost model.Post `json:"addPost"`
+		} `json:"data"`
+	}
+
+	err = c.Post(q, &response)
+	if err != nil {
+		t.Fatalf("q: %s, response: %v", q, response)
+		return
+	}
+
+	expectedPost := model.Post{
+		ID:              "1",
+		Title:           "mockTitle",
+		Content:         "mockContent",
+		CommentsAllowed: true,
+		CreatedAt:       createdPost.CreatedAt,
+	}
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedPost.ID, response.Data.AddPost.ID)
+	assert.Equal(t, expectedPost.Title, response.Data.AddPost.Title)
+	assert.Equal(t, expectedPost.Content, response.Data.AddPost.Content)
+	assert.Equal(t, expectedPost.CommentsAllowed, response.Data.AddPost.CommentsAllowed)
+	assert.Equal(t, expectedPost.CreatedAt, response.Data.AddPost.CreatedAt)
 }

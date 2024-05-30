@@ -77,7 +77,7 @@ func (cr *CommentInMemoryRepository) getRepliesForComment(ctx context.Context, c
 	return nil
 }
 
-func (cr *CommentInMemoryRepository) GetCommentsByPostID(_ context.Context, postID string) ([]*model.Comment, error) {
+func (cr *CommentInMemoryRepository) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
@@ -87,6 +87,12 @@ func (cr *CommentInMemoryRepository) GetCommentsByPostID(_ context.Context, post
 			if comm.PostID == postID {
 				comments = append(comments, comm)
 			}
+		}
+	}
+
+	for _, comment := range comments {
+		if err := cr.getRepliesForComment(ctx, comment); err != nil {
+			return nil, err
 		}
 	}
 
