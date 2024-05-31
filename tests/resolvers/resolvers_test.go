@@ -4,122 +4,241 @@ import (
 	"Ozon_testtask/graph"
 	"Ozon_testtask/internal/model"
 	mocks "Ozon_testtask/tests/mocks/services"
-	"bytes"
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
-	"strings"
 	"testing"
 	"time"
 )
 
 var mockNewPost = model.NewPost{
-	Title:           "mockTitle",
-	Content:         "mockContent",
+	Title:           "mock title",
+	Content:         "mock content",
 	CommentsAllowed: true,
 }
 
-var mockPost = model.Post{
-	ID:              "1",
+var mockPost = &model.Post{
+	ID:              "14ad7024-7c45-4453-9fac-2dfae1ad2c96",
 	Title:           mockNewPost.Title,
 	Content:         mockNewPost.Content,
 	CommentsAllowed: mockNewPost.CommentsAllowed,
 	CreatedAt:       time.Now().String(),
 }
 
-type mockRepoResp struct {
-	mockPost  interface{}
-	mockError error
+var mockComment = &model.Comment{
+	ID:        "24ad7024-7c45-4453-9fac-2dfae1ad2c96",
+	Content:   "mock title comment",
+	AuthorID:  "mock content comment",
+	PostID:    "14ad7024-7c45-4453-9fac-2dfae1ad2c96",
+	ParentID:  nil,
+	Replies:   nil,
+	CreatedAt: time.Now().String(),
 }
 
-//	type mockSessionResp struct {
-//		mockSession *models.Session
-//		mockError   error
-//	}
-type mockRequest struct {
-	mockRequestMethod        string
-	mockRequestURL           string
-	mockRequestBody          *strings.Reader
-	mockIncorrectRequestBody *bytes.Buffer
+type AddPostResponse struct {
+	ID              string           `json:"id"`
+	Title           string           `json:"title"`
+	Content         string           `json:"content"`
+	UserID          string           `json:"userID"`
+	CommentsAllowed bool             `json:"commentsAllowed"`
+	CreatedAt       string           `json:"createdAt"`
+	Comments        []*model.Comment `json:"comments"`
 }
 
-type testCase struct {
-	id             int
-	name           string
-	mockRequest    mockRequest
-	mockRepoResp   mockRepoResp
-	expectedStatus int
+var addPostResp struct {
+	AddPost AddPostResponse `json:"addPost"`
 }
 
-func TestShouldAddPost(t *testing.T) {
-	mockPostService := new(mocks.PostServiceMock)
-	mockCommentService := new(mocks.CommentServiceMock)
-	zapLogger, err := zap.NewProduction()
-	if err != nil {
-		t.Fatal(err)
-	}
-	logger := zapLogger.Sugar()
-
-	resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
-
-	newPost := model.NewPost{
-		Title:           "mockTitle",
-		Content:         "mockContent",
-		CommentsAllowed: true,
-	}
-
-	createdPost := model.Post{
-		ID:              "1",
-		Title:           newPost.Title,
-		Content:         newPost.Content,
-		CommentsAllowed: newPost.CommentsAllowed,
-		CreatedAt:       time.Now().String(),
-	}
-
-	mockPostService.On("AddPost", mock.Anything, newPost.Title, newPost.Content, newPost.CommentsAllowed).Return(createdPost, nil)
-
-	c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
-
-	q := `mutation AddPost {
-		addPost(
-			post: { title: "mockTitle", content: "mockContent", commentsAllowed: true }
-		) {
-			id
-			title
-			content
-			userID
-			commentsAllowed
-			createdAt
+func TestAddPost(t *testing.T) {
+	testCases := []struct {
+		id       int
+		name     string
+		mockPost *model.Post
+		query    string
+		response interface{}
+		isError  bool
+	}{{
+		id:       1,
+		name:     "Success",
+		mockPost: mockPost,
+		query: `
+		mutation AddPost {
+			addPost(post: { title: "mock title", content: "mock content", commentsAllowed: true }) {
+				id
+				title
+				content
+				userID
+				commentsAllowed
+				createdAt
+				comments {
+					id
+					content
+					authorID
+					postID
+					parentID
+					createdAt
+				}
+			}
 		}
+		`,
+		response: addPostResp,
+		isError:  false,
+	},
 	}
-	`
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockPostService := new(mocks.PostServiceMock)
+			mockCommentService := new(mocks.CommentServiceMock)
+			zapLogger, err := zap.NewProduction()
+			if err != nil {
+				t.Fatal(err)
+			}
+			logger := zapLogger.Sugar()
 
-	var response struct {
-		Data struct {
-			AddPost model.Post `json:"addPost"`
-		} `json:"data"`
+			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+
+			mockPostService.On("AddPost", mock.Anything, mockNewPost.Title, mockNewPost.Content, mockNewPost.CommentsAllowed).Return(*tc.mockPost, nil)
+
+			err = c.Post(tc.query, &tc.response)
+			if err != nil {
+				return
+			}
+			mockPostService.AssertExpectations(t)
+		})
 	}
+}
 
-	err = c.Post(q, &response)
-	if err != nil {
-		t.Fatalf("q: %s, response: %v", q, response)
-		return
+func TestAddComment(t *testing.T) {
+	testCases := []struct {
+		id           int
+		name         string
+		mockPost     *model.Post
+		mockComments []*model.Comment
+		query        string
+		response     interface{}
+		isError      bool
+	}{{
+		id:           1,
+		name:         "Success",
+		mockPost:     mockPost,
+		mockComments: []*model.Comment{mockComment},
+		query: `
+		mutation AddComment {
+			addComment(
+				comment: {
+					postID: "a2223908-47ff-4a9e-a775-8bea7ded7652"
+					content: "mock comment"
+					parentID: "\"\""
+				}
+			) {
+				id
+				title
+				content
+				userID
+				commentsAllowed
+				createdAt
+				comments {
+					id
+					content
+					authorID
+					postID
+					parentID
+					createdAt
+				}
+			}
+		}
+		`,
+		response: addPostResp,
+		isError:  false,
+	},
 	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockPostService := new(mocks.PostServiceMock)
+			mockCommentService := new(mocks.CommentServiceMock)
+			zapLogger, err := zap.NewProduction()
+			if err != nil {
+				t.Fatal(err)
+			}
+			logger := zapLogger.Sugar()
 
-	expectedPost := model.Post{
-		ID:              "1",
-		Title:           "mockTitle",
-		Content:         "mockContent",
-		CommentsAllowed: true,
-		CreatedAt:       createdPost.CreatedAt,
+			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+
+			mockCommentService.On("CommentPost", mock.Anything, mockComment.PostID, mockComment.Content).Return(tc.mockComments, nil)
+			mockPostService.On("GetPostByPostID", mock.Anything, mockComment.PostID).Return(*tc.mockPost, nil)
+
+			err = c.Post(tc.query, &tc.response)
+			if err != nil {
+				return
+			}
+
+			mockPostService.AssertExpectations(t)
+		})
 	}
+}
 
-	assert.NoError(t, err)
-	assert.Equal(t, expectedPost.ID, response.Data.AddPost.ID)
-	assert.Equal(t, expectedPost.Title, response.Data.AddPost.Title)
-	assert.Equal(t, expectedPost.Content, response.Data.AddPost.Content)
-	assert.Equal(t, expectedPost.CommentsAllowed, response.Data.AddPost.CommentsAllowed)
-	assert.Equal(t, expectedPost.CreatedAt, response.Data.AddPost.CreatedAt)
+func TestPost(t *testing.T) {
+	testCases := []struct {
+		id           int
+		name         string
+		mockPost     *model.Post
+		mockComments []*model.Comment
+		query        string
+		response     interface{}
+		isError      bool
+	}{{
+		id:           1,
+		name:         "Success",
+		mockPost:     mockPost,
+		mockComments: []*model.Comment{mockComment},
+		query: `
+		query Post {
+			post(id: "14ad7024-7c45-4453-9fac-2dfae1ad2c96", limit: 1, offset: 0) {
+				id
+				title
+				content
+				userID
+				commentsAllowed
+				createdAt
+				comments {
+					id
+					content
+					authorID
+					postID
+					parentID
+					createdAt
+				}
+			}
+		}
+		`,
+		response: addPostResp,
+		isError:  false,
+	},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockPostService := new(mocks.PostServiceMock)
+			mockCommentService := new(mocks.CommentServiceMock)
+			zapLogger, err := zap.NewProduction()
+			if err != nil {
+				t.Fatal(err)
+			}
+			logger := zapLogger.Sugar()
+
+			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+
+			mockPostService.On("GetPostByPostID", mock.Anything, mockPost.ID).Return(*tc.mockPost, nil)
+			mockCommentService.On("GetCommentsByPostID", mock.Anything, mockComment.PostID, 1, 0).Return(tc.mockComments, nil)
+
+			err = c.Post(tc.query, &tc.response)
+			if err != nil {
+				return
+			}
+			mockPostService.AssertExpectations(t)
+		})
+	}
 }

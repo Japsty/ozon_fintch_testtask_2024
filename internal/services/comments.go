@@ -51,6 +51,9 @@ func (cs *CommentService) CommentPost(ctx context.Context, postID, commentText, 
 }
 
 func (cs *CommentService) GetCommentsByPostID(ctx context.Context, postID string, limit int, offset int) ([]*model.Comment, error) {
+	if limit < 0 || offset < 0 {
+		return nil, errors.New("limit or Offset must be > 0")
+	}
 	comments, err := cs.CommentRepo.GetCommentsByPostIDPaginated(ctx, postID, limit, offset)
 	if err != nil {
 		return nil, err

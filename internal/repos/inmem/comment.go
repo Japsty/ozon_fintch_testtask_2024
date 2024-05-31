@@ -38,22 +38,6 @@ func (cr *CommentInMemoryRepository) CreateComment(_ context.Context, id, conten
 	return cr.data[postID], nil
 }
 
-func (cr *CommentInMemoryRepository) GetCommentByParentID(_ context.Context, parentID string) ([]*model.Comment, error) {
-	cr.mutex.RLock()
-	defer cr.mutex.RUnlock()
-
-	var comments []*model.Comment
-	for _, comms := range cr.data {
-		for _, comm := range comms {
-			if *comm.ParentID == parentID {
-				comments = append(comments, comm)
-			}
-		}
-	}
-
-	return comments, nil
-}
-
 func (cr *CommentInMemoryRepository) getRepliesForComment(ctx context.Context, comment *model.Comment) error {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
@@ -99,7 +83,7 @@ func (cr *CommentInMemoryRepository) GetCommentsByPostID(ctx context.Context, po
 	return comments, nil
 }
 
-func (cr *CommentInMemoryRepository) GetCommentsByPostIDPaginated(_ context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
+func (cr *CommentInMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
@@ -117,6 +101,12 @@ func (cr *CommentInMemoryRepository) GetCommentsByPostIDPaginated(_ context.Cont
 					break
 				}
 			}
+		}
+	}
+
+	for _, comment := range comments {
+		if err := cr.getRepliesForComment(ctx, comment); err != nil {
+			return nil, err
 		}
 	}
 
