@@ -38,7 +38,7 @@ func (cs *CommentService) CommentPost(ctx context.Context, id, text, parID strin
 		return nil, errors.New("unauthorized")
 	}
 
-	_, err = cs.CommentRepo.CreateComment(ctx, commentID, userID, text, id, parID)
+	_, err = cs.CommentRepo.CreateComment(ctx, commentID, text, userID, id, parID)
 	if err != nil {
 		return nil, err
 	}

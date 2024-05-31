@@ -17,17 +17,37 @@ func NewCommentRepository(db *sql.DB) *CommentRepository {
 }
 
 func (cr *CommentRepository) CreateComment(ctx context.Context, id, text, uID, pID, pcID string) ([]*model.Comment, error) {
-	_, err := cr.db.ExecContext(ctx, querries.CreateComment, id, text, uID, pID, pcID)
+	txOptions := sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	}
+
+	tx, err := cr.db.BeginTx(ctx, &txOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostID, pID)
+	defer func() {
+		if err != nil {
+			err = tx.Rollback()
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	_, err = tx.ExecContext(ctx, querries.CreateComment, id, text, uID, pID, pcID)
 	if err != nil {
 		return nil, err
 	}
 
-	comments := []*model.Comment{}
+	rows, err := tx.QueryContext(ctx, querries.GetCommentsByPostID, pID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var comments []*model.Comment
 
 	for rows.Next() {
 		comment := &model.Comment{}
@@ -50,14 +70,19 @@ func (cr *CommentRepository) CreateComment(ctx context.Context, id, text, uID, p
 		comments = append(comments, comment)
 	}
 
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
 	return comments, nil
 }
 
-func (cr *CommentRepository) getRepliesForComment(ctx context.Context, comment *model.Comment) error {
-	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByParentID, comment.ID)
+func (cr *CommentRepository) getRepliesForComment(ctx context.Context, tx *sql.Tx, comment *model.Comment) error {
+	rows, err := tx.QueryContext(ctx, querries.GetCommentsByParentID, comment.ID)
 	if err != nil {
 		return err
 	}
+
 	defer rows.Close()
 
 	replies := []*model.Comment{}
@@ -85,7 +110,7 @@ func (cr *CommentRepository) getRepliesForComment(ctx context.Context, comment *
 	for _, reply := range replies {
 		comment.Replies = append(comment.Replies, reply)
 
-		if err = cr.getRepliesForComment(ctx, reply); err != nil {
+		if err = cr.getRepliesForComment(ctx, tx, reply); err != nil {
 			return err
 		}
 	}
@@ -94,10 +119,29 @@ func (cr *CommentRepository) getRepliesForComment(ctx context.Context, comment *
 }
 
 func (cr *CommentRepository) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
-	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostID, postID)
+	txOptions := sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	}
+
+	tx, err := cr.db.BeginTx(ctx, &txOptions)
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() {
+		if err != nil {
+			err = tx.Rollback()
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	rows, err := tx.QueryContext(ctx, querries.GetCommentsByPostID, postID)
+	if err != nil {
+		return nil, err
+	}
+
 	defer rows.Close()
 
 	comments := []*model.Comment{}
@@ -123,19 +167,42 @@ func (cr *CommentRepository) GetCommentsByPostID(ctx context.Context, postID str
 	}
 
 	for _, comment := range comments {
-		if err := cr.getRepliesForComment(ctx, comment); err != nil {
+		if err := cr.getRepliesForComment(ctx, tx, comment); err != nil {
 			return nil, err
 		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
 	}
 
 	return comments, nil
 }
 
 func (cr *CommentRepository) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
-	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostIDPaginated, postID, limit, offset)
+	txOptions := sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	}
+
+	tx, err := cr.db.BeginTx(ctx, &txOptions)
 	if err != nil {
 		return nil, err
 	}
+
+	defer func() {
+		if err != nil {
+			err = tx.Rollback()
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	rows, err := tx.QueryContext(ctx, querries.GetCommentsByPostIDPaginated, postID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
 	defer rows.Close()
 
 	comments := []*model.Comment{}
@@ -161,9 +228,13 @@ func (cr *CommentRepository) GetCommentsByPostIDPaginated(ctx context.Context, p
 	}
 
 	for _, comment := range comments {
-		if err := cr.getRepliesForComment(ctx, comment); err != nil {
+		if err := cr.getRepliesForComment(ctx, tx, comment); err != nil {
 			return nil, err
 		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
 	}
 
 	return comments, nil

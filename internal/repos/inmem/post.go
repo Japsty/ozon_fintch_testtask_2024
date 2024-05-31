@@ -37,7 +37,7 @@ func (pr *PostRepository) GetAllPosts(_ context.Context) ([]*model.Post, error) 
 	return result, nil
 }
 
-func (pr *PostRepository) CreatePost(_ context.Context, id, title, text, _ string, cStatus bool) (model.Post, error) {
+func (pr *PostRepository) CreatePost(_ context.Context, id, title, text, uID string, cStatus bool) (model.Post, error) {
 	pr.mutex.Lock()
 	defer pr.mutex.Unlock()
 
@@ -45,6 +45,7 @@ func (pr *PostRepository) CreatePost(_ context.Context, id, title, text, _ strin
 		ID:              id,
 		Title:           title,
 		Content:         text,
+		UserID:          uID,
 		Comments:        []*model.Comment{},
 		CommentsAllowed: cStatus,
 		CreatedAt:       time.Now().String(),
