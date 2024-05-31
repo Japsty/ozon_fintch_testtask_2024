@@ -38,7 +38,17 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.NewComm
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, TimeoutTime)
 	defer cancel()
 
-	postComments, err := r.CommentService.CommentPost(ctxWithTimeout, comment.PostID, comment.Content, *comment.ParentID)
+	var parentID string
+
+	if comment.ParentID != nil {
+		fmt.Println("not nil")
+		parentID = *comment.ParentID
+	} else {
+		fmt.Println("nil")
+		parentID = ""
+	}
+
+	postComments, err := r.CommentService.CommentPost(ctxWithTimeout, comment.PostID, comment.Content, parentID)
 	if err != nil {
 		r.Logger.Error("AddComment Resolver CommentPost Error: ", err)
 		return nil, err
@@ -61,7 +71,7 @@ func (r *mutationResolver) ToggleComments(ctx context.Context, postID string, al
 
 	post, err := r.PostService.UpdatePostCommentsStatus(ctxWithTimeout, postID, allowed)
 	if err != nil {
-		r.Logger.Error("ToggleComments UpdatePostCommentsStatus Error: ", err)
+		r.Logger.Error("ToggleComments UpdatePostStatus Error: ", err)
 		return nil, err
 	}
 

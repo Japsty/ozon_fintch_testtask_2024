@@ -8,29 +8,32 @@ import (
 	"time"
 )
 
-type CommentMemoryRepository struct {
+type CommentRepository struct {
 	db *sql.DB
 }
 
-func NewCommentRepository(db *sql.DB) *CommentMemoryRepository {
-	return &CommentMemoryRepository{db: db}
+func NewCommentRepository(db *sql.DB) *CommentRepository {
+	return &CommentRepository{db: db}
 }
 
-func (cr *CommentMemoryRepository) CreateComment(ctx context.Context, id, content, userID, postID, parentCommentID string) ([]*model.Comment, error) {
-	_, err := cr.db.ExecContext(ctx, querries.CreateComment, id, content, userID, postID, parentCommentID)
+func (cr *CommentRepository) CreateComment(ctx context.Context, id, text, uID, pID, pcID string) ([]*model.Comment, error) {
+	_, err := cr.db.ExecContext(ctx, querries.CreateComment, id, text, uID, pID, pcID)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostID, postID)
+	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostID, pID)
 	if err != nil {
 		return nil, err
 	}
 
 	comments := []*model.Comment{}
+
 	for rows.Next() {
 		comment := &model.Comment{}
+
 		var createdAtTime time.Time
+
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
@@ -41,14 +44,16 @@ func (cr *CommentMemoryRepository) CreateComment(ctx context.Context, id, conten
 		); err != nil {
 			return nil, err
 		}
+
 		comment.CreatedAt = createdAtTime.String()
+
 		comments = append(comments, comment)
 	}
 
 	return comments, nil
 }
 
-func (cr *CommentMemoryRepository) getRepliesForComment(ctx context.Context, comment *model.Comment) error {
+func (cr *CommentRepository) getRepliesForComment(ctx context.Context, comment *model.Comment) error {
 	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByParentID, comment.ID)
 	if err != nil {
 		return err
@@ -56,10 +61,13 @@ func (cr *CommentMemoryRepository) getRepliesForComment(ctx context.Context, com
 	defer rows.Close()
 
 	replies := []*model.Comment{}
+
 	for rows.Next() {
 		reply := &model.Comment{}
+
 		var createdAtTime time.Time
-		if err := rows.Scan(
+
+		if err = rows.Scan(
 			&reply.ID,
 			&reply.Content,
 			&reply.AuthorID,
@@ -69,12 +77,14 @@ func (cr *CommentMemoryRepository) getRepliesForComment(ctx context.Context, com
 		); err != nil {
 			return err
 		}
+
 		reply.CreatedAt = createdAtTime.String()
 		replies = append(replies, reply)
 	}
 
 	for _, reply := range replies {
 		comment.Replies = append(comment.Replies, reply)
+
 		if err = cr.getRepliesForComment(ctx, reply); err != nil {
 			return err
 		}
@@ -83,7 +93,7 @@ func (cr *CommentMemoryRepository) getRepliesForComment(ctx context.Context, com
 	return nil
 }
 
-func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
+func (cr *CommentRepository) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
 	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostID, postID)
 	if err != nil {
 		return nil, err
@@ -91,9 +101,12 @@ func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, post
 	defer rows.Close()
 
 	comments := []*model.Comment{}
+
 	for rows.Next() {
 		comment := &model.Comment{}
+
 		var createdAtTime time.Time
+
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
@@ -104,6 +117,7 @@ func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, post
 		); err != nil {
 			return nil, err
 		}
+
 		comment.CreatedAt = createdAtTime.String()
 		comments = append(comments, comment)
 	}
@@ -117,7 +131,7 @@ func (cr *CommentMemoryRepository) GetCommentsByPostID(ctx context.Context, post
 	return comments, nil
 }
 
-func (cr *CommentMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
+func (cr *CommentRepository) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
 	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostIDPaginated, postID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -125,9 +139,12 @@ func (cr *CommentMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Cont
 	defer rows.Close()
 
 	comments := []*model.Comment{}
+
 	for rows.Next() {
 		comment := &model.Comment{}
+
 		var createdAtTime time.Time
+
 		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
@@ -138,6 +155,7 @@ func (cr *CommentMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Cont
 		); err != nil {
 			return nil, err
 		}
+
 		comment.CreatedAt = createdAtTime.String()
 		comments = append(comments, comment)
 	}

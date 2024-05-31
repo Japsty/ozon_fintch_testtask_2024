@@ -7,42 +7,43 @@ import (
 	"time"
 )
 
-type CommentInMemoryRepository struct {
+type CommentRepository struct {
 	data  map[string][]*model.Comment
 	mutex sync.RWMutex
 }
 
-func NewCommentInMemoryRepository() *CommentInMemoryRepository {
-	return &CommentInMemoryRepository{
+func NewCommentInMemoryRepository() *CommentRepository {
+	return &CommentRepository{
 		data:  map[string][]*model.Comment{},
 		mutex: sync.RWMutex{},
 	}
 }
 
-func (cr *CommentInMemoryRepository) CreateComment(_ context.Context, id, content, userID, postID, parentCommentID string) ([]*model.Comment, error) {
+func (cr *CommentRepository) CreateComment(_ context.Context, id, text, uID, pID, pcID string) ([]*model.Comment, error) {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 
 	newComment := &model.Comment{
 		ID:        id,
-		Content:   content,
-		AuthorID:  userID,
-		PostID:    postID,
-		ParentID:  &parentCommentID,
+		Content:   text,
+		AuthorID:  uID,
+		PostID:    pID,
+		ParentID:  &pcID,
 		CreatedAt: time.Now().String(),
 		Replies:   []*model.Comment{},
 	}
 
-	cr.data[postID] = append(cr.data[postID], newComment)
+	cr.data[pID] = append(cr.data[pID], newComment)
 
-	return cr.data[postID], nil
+	return cr.data[pID], nil
 }
 
-func (cr *CommentInMemoryRepository) getRepliesForComment(ctx context.Context, comment *model.Comment) error {
+func (cr *CommentRepository) getRepliesForComment(comment *model.Comment) error {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
 	var replies []*model.Comment
+
 	for _, comms := range cr.data {
 		for _, comm := range comms {
 			if *comm.ParentID == comment.ID {
@@ -53,7 +54,8 @@ func (cr *CommentInMemoryRepository) getRepliesForComment(ctx context.Context, c
 
 	for _, reply := range replies {
 		comment.Replies = append(comment.Replies, reply)
-		if err := cr.getRepliesForComment(ctx, reply); err != nil {
+
+		if err := cr.getRepliesForComment(reply); err != nil {
 			return err
 		}
 	}
@@ -61,21 +63,22 @@ func (cr *CommentInMemoryRepository) getRepliesForComment(ctx context.Context, c
 	return nil
 }
 
-func (cr *CommentInMemoryRepository) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
+func (cr *CommentRepository) GetCommentsByPostID(_ context.Context, pID string) ([]*model.Comment, error) {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
 	var comments []*model.Comment
+
 	for _, comms := range cr.data {
 		for _, comm := range comms {
-			if comm.PostID == postID {
+			if comm.PostID == pID {
 				comments = append(comments, comm)
 			}
 		}
 	}
 
 	for _, comment := range comments {
-		if err := cr.getRepliesForComment(ctx, comment); err != nil {
+		if err := cr.getRepliesForComment(comment); err != nil {
 			return nil, err
 		}
 	}
@@ -83,21 +86,23 @@ func (cr *CommentInMemoryRepository) GetCommentsByPostID(ctx context.Context, po
 	return comments, nil
 }
 
-func (cr *CommentInMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
+func (cr *CommentRepository) GetCommentsByPostIDPaginated(_ context.Context, pID string, l, o int) ([]*model.Comment, error) {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
 	var comments []*model.Comment
+
 	for _, comms := range cr.data {
 		for _, comm := range comms {
-			if comm.PostID == postID {
-				if offset > 0 {
-					offset--
+			if comm.PostID == pID {
+				switch {
+				case o > 0:
+					o--
 					continue
-				} else if limit > 0 {
+				case l > 0:
 					comments = append(comments, comm)
-					limit--
-				} else {
+					l--
+				default:
 					break
 				}
 			}
@@ -105,7 +110,7 @@ func (cr *CommentInMemoryRepository) GetCommentsByPostIDPaginated(ctx context.Co
 	}
 
 	for _, comment := range comments {
-		if err := cr.getRepliesForComment(ctx, comment); err != nil {
+		if err := cr.getRepliesForComment(comment); err != nil {
 			return nil, err
 		}
 	}

@@ -3,6 +3,7 @@ package services
 import (
 	"Ozon_testtask/internal/model"
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/google/uuid"
 )
@@ -12,7 +13,6 @@ var (
 )
 
 type PostService struct {
-	sessions    SessionService
 	PostRepo    model.PostRepo
 	CommentRepo model.CommentRepo
 }
@@ -32,6 +32,7 @@ func (ps *PostService) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		post.Comments = comments
 	}
 
@@ -57,10 +58,10 @@ func (ps *PostService) AddPost(ctx context.Context, title, text string, status b
 func (ps *PostService) GetPostByPostID(ctx context.Context, postID string) (model.Post, error) {
 	post, err := ps.PostRepo.GetPostByPostID(ctx, postID)
 	if err != nil {
-		errNoRows := errors.New("no rows in result set")
-		if errors.As(err, &errNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return model.Post{}, errNotFound
 		}
+
 		return model.Post{}, err
 	}
 
@@ -73,9 +74,10 @@ func (ps *PostService) UpdatePostCommentsStatus(ctx context.Context, postID stri
 		return model.Post{}, errors.New("unauthorized")
 	}
 
-	post, err := ps.PostRepo.UpdatePostCommentsStatus(ctx, postID, userID, status)
+	post, err := ps.PostRepo.UpdatePostStatus(ctx, postID, userID, status)
 	if err != nil {
 		return model.Post{}, err
 	}
+
 	return post, nil
 }

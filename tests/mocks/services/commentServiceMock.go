@@ -12,12 +12,8 @@ type CommentServiceMock struct {
 	mock.Mock
 }
 
-func NewCommentService(commentRepo model.CommentRepo, postRepo model.PostRepo) *CommentServiceMock {
-	return &CommentServiceMock{CommentRepo: commentRepo, PostRepo: postRepo}
-}
-
-func (cs *CommentServiceMock) CommentPost(ctx context.Context, postID, commentText, parentCommentID string) ([]*model.Comment, error) {
-	args := cs.Called(ctx, postID, commentText, parentCommentID)
+func (cs *CommentServiceMock) CommentPost(ctx context.Context, id, text, parentID string) ([]*model.Comment, error) {
+	args := cs.Called(ctx, id, text, parentID)
 	return args.Get(0).([]*model.Comment), args.Error(1)
 }
 
@@ -26,7 +22,7 @@ func (cs *CommentServiceMock) GetCommentByParentID(ctx context.Context, parentID
 	return args.Get(0).([]*model.Comment), args.Error(1)
 }
 
-func (cs *CommentServiceMock) GetCommentsByPostID(ctx context.Context, postID string, limit int, offset int) ([]*model.Comment, error) {
-	args := cs.Called(ctx, postID, limit, offset)
+func (cs *CommentServiceMock) GetCommentsByPostID(ctx context.Context, id string, l, o int) ([]*model.Comment, error) {
+	args := cs.Called(ctx, id, l, o)
 	return args.Get(0).([]*model.Comment), args.Error(1)
 }

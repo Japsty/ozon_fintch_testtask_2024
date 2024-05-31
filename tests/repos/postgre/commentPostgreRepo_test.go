@@ -34,9 +34,9 @@ type CommentWithoutPointers struct {
 }
 
 func deletePointer(comment *model.Comment) CommentWithoutPointers {
-	var parentID string
+	var parentIDStr string
 	if comment.ParentID != nil {
-		parentID = *comment.ParentID
+		parentIDStr = *comment.ParentID
 	}
 
 	replies := []CommentWithoutPointers{}
@@ -49,7 +49,7 @@ func deletePointer(comment *model.Comment) CommentWithoutPointers {
 		Content:   comment.Content,
 		AuthorID:  comment.AuthorID,
 		PostID:    comment.PostID,
-		ParentID:  parentID,
+		ParentID:  parentIDStr,
 		Replies:   replies,
 		CreatedAt: comment.CreatedAt,
 	}
@@ -65,6 +65,7 @@ func TestCreateComment(t *testing.T) {
 	repo := postgre.NewCommentRepository(db)
 
 	createdAt := time.Now()
+
 	mock.ExpectExec(regexp.QuoteMeta(querries.CreateComment)).WithArgs(
 		mockComment.ID,
 		mockComment.Content,
@@ -96,7 +97,14 @@ func TestCreateComment(t *testing.T) {
 					createdAt,
 				))
 
-	comment, err := repo.CreateComment(context.Background(), mockComment.ID, mockComment.Content, mockComment.AuthorID, mockPost.ID, parentID)
+	comment, err := repo.CreateComment(
+		context.Background(),
+		mockComment.ID,
+		mockComment.Content,
+		mockComment.AuthorID,
+		mockPost.ID,
+		parentID,
+	)
 	if err != nil {
 		t.Fatalf("CreateComment Error: %s", err)
 	}
@@ -130,6 +138,7 @@ func TestGetCommentByPostID(t *testing.T) {
 	repo := postgre.NewCommentRepository(db)
 
 	var childComment = mockComment
+
 	var childChildComment = mockComment
 
 	createdAt := time.Now()
@@ -259,18 +268,19 @@ func TestGetCommentByPostIDPaginated(t *testing.T) {
 	repo := postgre.NewCommentRepository(db)
 
 	var childComment = mockComment
+
 	var childChildComment = mockComment
 
 	createdAt := time.Now()
 
 	childCommParentID := "14ad7024-7c45-4453-9fac-2dfae1ad2c96"
 
-	childComment.ID = "24ad7024-7c45-4453-9fac-2dfae1ad2c96"
+	childComment.ID = "44ad7024-7c45-4453-9fac-2dfae1ad2c96"
 	childComment.ParentID = &childCommParentID
 	childComment.Replies = []*model.Comment{&childChildComment}
 	childComment.CreatedAt = createdAt.String()
 
-	childChildCommParentID := "24ad7024-7c45-4453-9fac-2dfae1ad2c96"
+	childChildCommParentID := "44ad7024-7c45-4453-9fac-2dfae1ad2c96"
 
 	childChildComment.ID = "34ad7024-7c45-4453-9fac-2dfae1ad2c96"
 	childChildComment.ParentID = &childChildCommParentID

@@ -9,7 +9,6 @@ import (
 
 var (
 	errNotFound           = errors.New("not found")
-	errForbidden          = errors.New("forbidden")
 	errCommentsNotAllowed = errors.New("comments not allowed")
 )
 
@@ -22,9 +21,10 @@ func NewCommentService(commentRepo model.CommentRepo, postRepo model.PostRepo) *
 	return &CommentService{CommentRepo: commentRepo, PostRepo: postRepo}
 }
 
-func (cs *CommentService) CommentPost(ctx context.Context, postID, commentText, parentCommentID string) ([]*model.Comment, error) {
+func (cs *CommentService) CommentPost(ctx context.Context, id, text, parID string) ([]*model.Comment, error) {
 	commentID := uuid.NewString()
-	post, err := cs.PostRepo.GetPostByPostID(ctx, postID)
+	post, err := cs.PostRepo.GetPostByPostID(ctx, id)
+
 	if err != nil {
 		return nil, err
 	}
@@ -37,12 +37,13 @@ func (cs *CommentService) CommentPost(ctx context.Context, postID, commentText, 
 	if !ok {
 		return nil, errors.New("unauthorized")
 	}
-	_, err = cs.CommentRepo.CreateComment(ctx, commentID, userID, commentText, postID, parentCommentID)
+
+	_, err = cs.CommentRepo.CreateComment(ctx, commentID, userID, text, id, parID)
 	if err != nil {
 		return nil, err
 	}
 
-	updatedComments, err := cs.CommentRepo.GetCommentsByPostID(ctx, postID)
+	updatedComments, err := cs.CommentRepo.GetCommentsByPostID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +51,13 @@ func (cs *CommentService) CommentPost(ctx context.Context, postID, commentText, 
 	return updatedComments, nil
 }
 
-func (cs *CommentService) GetCommentsByPostID(ctx context.Context, postID string, limit int, offset int) ([]*model.Comment, error) {
-	if limit < 0 || offset < 0 {
+func (cs *CommentService) GetCommentsByPostID(ctx context.Context, id string, l, o int) ([]*model.Comment, error) {
+	if l < 0 || o < 0 {
 		return nil, errors.New("limit or Offset must be > 0")
 	}
-	comments, err := cs.CommentRepo.GetCommentsByPostIDPaginated(ctx, postID, limit, offset)
+
+	comments, err := cs.CommentRepo.GetCommentsByPostIDPaginated(ctx, id, l, o)
+
 	if err != nil {
 		return nil, err
 	}

@@ -15,7 +15,9 @@ func AccessLog(logger *zap.SugaredLogger, next http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 
 		start := time.Now()
+
 		next.ServeHTTP(w, r)
+
 		logger.Infow("New request",
 			"requestID", requestID,
 			"method", r.Method,

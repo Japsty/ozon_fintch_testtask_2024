@@ -5,7 +5,7 @@ const (
 
 	CreateComment = `
 		INSERT INTO comments(id, content, author_id, post_id, parent_id, created_at)
-		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP);
+		VALUES ($1, $2, $3, $4, COALESCE(NULLIF($5, '')), CURRENT_TIMESTAMP);
 	`
 	GetCommentsByParentID = `
 		SELECT id, content, author_id, post_id, parent_id, created_at
@@ -16,13 +16,13 @@ const (
 	GetCommentsByPostID = `
 		SELECT id, content, author_id, post_id, parent_id, created_at
 		FROM comments
-		WHERE post_id = $1 AND parent_id = '';
+		WHERE post_id = $1 AND parent_id IS NULL;
     `
 
 	GetCommentsByPostIDPaginated = `
 		SELECT id, content, author_id, post_id, parent_id, created_at
 		FROM comments
-		WHERE post_id = $1
+		WHERE post_id = $1 AND parent_id IS NULL
 		ORDER BY created_at DESC
 		LIMIT $2 OFFSET $3;
     `

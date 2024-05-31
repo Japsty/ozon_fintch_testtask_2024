@@ -90,21 +90,30 @@ func TestAddPost(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockPostService := new(mocks.PostServiceMock)
 			mockCommentService := new(mocks.CommentServiceMock)
+
 			zapLogger, err := zap.NewProduction()
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			logger := zapLogger.Sugar()
 
 			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
 			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
 
-			mockPostService.On("AddPost", mock.Anything, mockNewPost.Title, mockNewPost.Content, mockNewPost.CommentsAllowed).Return(*tc.mockPost, nil)
+			mockPostService.On(
+				"AddPost",
+				mock.Anything,
+				mockNewPost.Title,
+				mockNewPost.Content,
+				mockNewPost.CommentsAllowed,
+			).Return(*tc.mockPost, nil)
 
 			err = c.Post(tc.query, &tc.response)
 			if err != nil {
 				return
 			}
+
 			mockPostService.AssertExpectations(t)
 		})
 	}
@@ -158,16 +167,20 @@ func TestAddComment(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockPostService := new(mocks.PostServiceMock)
 			mockCommentService := new(mocks.CommentServiceMock)
+
 			zapLogger, err := zap.NewProduction()
+
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			logger := zapLogger.Sugar()
 
 			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
 			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
 
-			mockCommentService.On("CommentPost", mock.Anything, mockComment.PostID, mockComment.Content).Return(tc.mockComments, nil)
+			mockCommentService.On("CommentPost", mock.Anything, mockComment.PostID, mockComment.Content).
+				Return(tc.mockComments, nil)
 			mockPostService.On("GetPostByPostID", mock.Anything, mockComment.PostID).Return(*tc.mockPost, nil)
 
 			err = c.Post(tc.query, &tc.response)
@@ -222,22 +235,26 @@ func TestPost(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockPostService := new(mocks.PostServiceMock)
 			mockCommentService := new(mocks.CommentServiceMock)
+
 			zapLogger, err := zap.NewProduction()
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			logger := zapLogger.Sugar()
 
 			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
 			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
 
 			mockPostService.On("GetPostByPostID", mock.Anything, mockPost.ID).Return(*tc.mockPost, nil)
+
 			mockCommentService.On("GetCommentsByPostID", mock.Anything, mockComment.PostID, 1, 0).Return(tc.mockComments, nil)
 
 			err = c.Post(tc.query, &tc.response)
 			if err != nil {
 				return
 			}
+
 			mockPostService.AssertExpectations(t)
 		})
 	}

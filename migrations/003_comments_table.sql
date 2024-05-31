@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS comments
     content VARCHAR(2000) NOT NULL,
     author_id VARCHAR(255) NOT NULL,
     post_id VARCHAR(255) NOT NULL,
-    parent_id VARCHAR(255) NOT NULL,
+    parent_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

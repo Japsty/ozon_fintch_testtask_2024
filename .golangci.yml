@@ -51,7 +51,6 @@ linters:
     - bodyclose
     - cyclop
     - decorder
-    - lll
     - unparam
     - wsl
     - noctx

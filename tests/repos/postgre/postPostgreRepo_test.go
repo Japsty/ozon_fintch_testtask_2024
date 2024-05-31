@@ -101,7 +101,14 @@ func TestCreatePost(t *testing.T) {
 					createdAt,
 				))
 
-	post, err := repo.CreatePost(context.Background(), mockPost.ID, mockPost.Title, mockPost.Content, mockPost.UserID, mockPost.CommentsAllowed)
+	post, err := repo.CreatePost(
+		context.Background(),
+		mockPost.ID,
+		mockPost.Title,
+		mockPost.Content,
+		mockPost.UserID,
+		mockPost.CommentsAllowed,
+	)
 	if err != nil {
 		t.Fatalf("CreatePost Error: %s", err)
 	}
@@ -184,7 +191,12 @@ func TestUpdatePostCommentsStatus(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "content", "user_id", "comments_allowed", "created_at"}).
 			AddRow(mockPost.ID, mockPost.Title, mockPost.Content, mockPost.UserID, true, createdAt))
 
-	posts, err := repo.UpdatePostCommentsStatus(context.Background(), mockPost.ID, mockPost.UserID, mockPost.CommentsAllowed)
+	posts, err := repo.UpdatePostStatus(
+		context.Background(),
+		mockPost.ID,
+		mockPost.UserID,
+		mockPost.CommentsAllowed,
+	)
 	if err != nil {
 		t.Fatalf("GetPostByPostI Error: %s", err)
 	}

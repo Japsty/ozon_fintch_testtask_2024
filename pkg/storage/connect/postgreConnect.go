@@ -23,5 +23,6 @@ func NewPostgresConnection() (*sql.DB, error) {
 	}
 
 	fmt.Println("DB connection opened")
+
 	return conn, nil
 }

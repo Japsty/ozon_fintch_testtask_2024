@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"Ozon_testtask/internal/services"
 	"context"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
@@ -9,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 )
+
+var TokenSecret = []byte("Super Secret Key")
 
 func Auth(logger *zap.SugaredLogger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -18,6 +19,7 @@ func Auth(logger *zap.SugaredLogger, next http.Handler) http.Handler {
 		if authToken == "" {
 			logger.Error(reqIDString + "Missing token header")
 			next.ServeHTTP(w, r)
+
 			return
 		}
 
@@ -25,6 +27,7 @@ func Auth(logger *zap.SugaredLogger, next http.Handler) http.Handler {
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
 			logger.Error(reqIDString+"Invalid token header format: ", authToken)
 			http.Error(w, "Invalid token header format", http.StatusUnauthorized)
+
 			return
 		}
 
@@ -32,12 +35,13 @@ func Auth(logger *zap.SugaredLogger, next http.Handler) http.Handler {
 
 		claims := jwt.MapClaims{}
 		token, err := jwt.ParseWithClaims(authToken, claims, func(token *jwt.Token) (interface{}, error) {
-			return services.TokenSecret, nil
+			return TokenSecret, nil
 		})
 
 		if err != nil || !token.Valid {
 			logger.Errorf(reqIDString+"Auth err: %s, is token valid: %t", err, token.Valid)
 			w.WriteHeader(http.StatusUnauthorized)
+
 			return
 		}
 
@@ -45,6 +49,7 @@ func Auth(logger *zap.SugaredLogger, next http.Handler) http.Handler {
 		if !ok {
 			logger.Error(reqIDString + "User ID not found in token")
 			http.Error(w, "User ID not found in token", http.StatusUnauthorized)
+
 			return
 		}
 

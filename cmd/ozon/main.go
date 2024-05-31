@@ -31,19 +31,25 @@ func main() {
 			return
 		}
 	}(zapLogger)
+
 	logger := zapLogger.Sugar()
 
 	var pr model.PostRepo
+
 	var cr model.CommentRepo
 
 	storageType := os.Getenv("STORAGE")
-	if storageType == "postgres" {
+	switch storageType {
+	case "postgres":
 		logger.Infof("postgres enabled")
+
 		postgresConnect, err := connect.NewPostgresConnection()
+
 		if err != nil {
 			logger.Error("Connecting to SQL database error: ", err)
 			return
 		}
+
 		defer postgresConnect.Close()
 
 		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -56,10 +62,10 @@ func main() {
 
 		pr = postgre.NewPostRepository(postgresConnect)
 		cr = postgre.NewCommentRepository(postgresConnect)
-	} else if storageType == "inmemory" {
+	case "inmemory":
 		pr = inmem.NewPostInMemoryRepository()
 		cr = inmem.NewCommentInMemoryRepository()
-	} else {
+	default:
 		logger.Fatal("Unknown storage type: ", storageType)
 		return
 	}
@@ -78,7 +84,6 @@ func main() {
 	})
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
-	//srv.AddTransport(&transport.Websocket{})
 
 	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	r.Handle("/query", srv)
@@ -89,6 +94,7 @@ func main() {
 	}
 
 	logger.Infof("Starting client on port: %s", port)
+
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		logger.Fatal("Server failed to start", err)
 	}
