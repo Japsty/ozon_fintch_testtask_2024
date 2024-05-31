@@ -1,0 +1,72 @@
+run:
+  deadline: 1m
+  tests: true
+
+  skip-dirs-use-default: true
+  skip-dirs:
+    - bin$
+    - \.git$
+    - misc$
+    - spec$
+    - pkg$
+    - common$
+
+linters-settings:
+  errcheck:
+    check-blank: true
+  govet:
+    check-shadowing: true
+  golint:
+    min-confidence: 0.3
+  gocyclo:
+    min-complexity: 20
+  gocognit:
+    min-complexity: 30
+  dupl:
+    threshold: 200
+  nakedret:
+    max-func-lines: 50
+  funlen:
+    lines: 80
+    statements: 50
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - errcheck
+    - goconst
+    - gocritic
+    - gocyclo
+    - gosimple
+    - govet
+    - ineffassign
+    - nakedret
+    - prealloc
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - bodyclose
+    - cyclop
+    - decorder
+    - unparam
+    - wsl
+    - noctx
+    - predeclared
+    - nilerr
+    - reassign
+  fast: false
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude:
+    - "should have comment"
+    - "always receives"
+    - "parameter .* is always"
+    - "comment on exported .* should be of the form"
+
+output:
+  format: colored-line-number

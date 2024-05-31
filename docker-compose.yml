@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  pq_database:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: Ozon
+      POSTGRES_USER: Ozon
+      POSTGRES_PASSWORD: ozon
+    ports:
+      - "5432:5432"
+    networks:
+      - service_network
+
+  service:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - pq_database
+    networks:
+      - service_network
+    ports:
+      - "8081:8081"
+    environment:
+      STORAGE : "postgres"
+#      STORAGE : "inmemory"
+      PORT: '8081'
+
+networks:
+  service_network:
+    driver: bridge

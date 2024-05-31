@@ -1,0 +1,54 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+scalar UUID
+scalar DateTime
+
+type Query {
+  posts: [Post]!
+  post(id: UUID!, limit: Int!, offset: Int!): Post
+}
+
+type Mutation {
+  addPost(post: NewPost!): Post
+  addComment(comment: NewComment!): Post
+  toggleComments(postId: UUID!, allowed: Boolean!): Post
+}
+
+input NewPost{
+  title: String!
+  content: String!
+  commentsAllowed: Boolean!
+}
+
+type Post {
+  id: UUID!
+  title: String!
+  content: String!
+  userID: UUID!
+  comments: [Comment]!
+  commentsAllowed: Boolean!
+  createdAt: DateTime!
+}
+
+
+input NewComment{
+  postID: UUID!
+  parentID:UUID
+  content: String!
+}
+
+type Comment {
+  id: UUID!
+  content: String!
+  authorID: String!
+  postID: UUID!
+  parentID: UUID
+  replies: [Comment]
+  createdAt: DateTime!
+}
+
+type Subscription {
+  commentAdded(postId: UUID!): Comment
+}
