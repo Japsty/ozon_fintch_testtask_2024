@@ -119,6 +119,20 @@ func (r *queryResolver) Post(ctx context.Context, id string, limit int, offset i
 
 // CommentAdded is the resolver for the commentAdded field.
 func (r *subscriptionResolver) CommentAdded(ctx context.Context, postID string) (<-chan *model.Comment, error) {
+	ch := make(chan *model.Comment, 1)
+
+	go func() {
+		<-ctx.Done()
+	}()
+
+	go func(ch chan *model.Comment) {
+		for {
+			select {
+			case <-ch:
+
+			}
+		}
+	}(ch)
 	panic(fmt.Errorf("not implemented: CommentAdded - commentAdded"))
 }
 

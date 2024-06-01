@@ -25,8 +25,8 @@ services:
     ports:
       - "8081:8081"
     environment:
-#      STORAGE : "postgres"
-      STORAGE : "inmemory"
+      STORAGE : "postgres"
+#      STORAGE : "inmemory"
       PORT: '8081'
 
 networks:

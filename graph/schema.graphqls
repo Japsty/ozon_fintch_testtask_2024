@@ -49,6 +49,17 @@ type Comment {
   createdAt: DateTime!
 }
 
+type User {
+  id: ID!
+  name: String!
+}
+
+input NewUser {
+  name: String!
+  email: String!
+  password: String!
+}
+
 type Subscription {
   commentAdded(postId: UUID!): Comment
 }

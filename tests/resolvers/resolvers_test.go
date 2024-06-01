@@ -259,3 +259,75 @@ func TestPost(t *testing.T) {
 		})
 	}
 }
+
+func TestToggleComments(t *testing.T) {
+	testCases := []struct {
+		id           int
+		name         string
+		mockPost     *model.Post
+		mockComments []*model.Comment
+		query        string
+		response     interface{}
+		isError      bool
+	}{{
+		id:           1,
+		name:         "Success",
+		mockPost:     mockPost,
+		mockComments: []*model.Comment{mockComment},
+		query: `
+		mutation AddComment {
+			addComment(
+				comment: {
+					postID: "a2223908-47ff-4a9e-a775-8bea7ded7652"
+					content: "mock comment"
+					parentID: "\"\""
+				}
+			) {
+				id
+				title
+				content
+				userID
+				commentsAllowed
+				createdAt
+				comments {
+					id
+					content
+					authorID
+					postID
+					parentID
+					createdAt
+				}
+			}
+		}
+		`,
+		response: addPostResp,
+		isError:  false,
+	},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockPostService := new(mocks.PostServiceMock)
+			mockCommentService := new(mocks.CommentServiceMock)
+
+			zapLogger, err := zap.NewProduction()
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			logger := zapLogger.Sugar()
+
+			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+
+			mockPostService.On("UpdatePostCommentsStatus", mock.Anything, mockPost.ID, true).Return(*tc.mockPost, nil)
+
+			err = c.Post(tc.query, &tc.response)
+			if err != nil {
+				return
+			}
+
+			mockPostService.AssertExpectations(t)
+		})
+	}
+}

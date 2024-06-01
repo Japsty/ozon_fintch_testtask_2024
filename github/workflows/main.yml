@@ -1,0 +1,74 @@
+image: golang:1.22
+
+stages:
+  - build
+  - test
+  - deploy
+
+build-job:
+  stage: build
+  script:
+    - echo "Building the app"
+    - mkdir -p mybinaries
+    - go build -o mybinaries cmd/ozon/main.go
+  artifacts:
+    paths:
+      - mybinaries
+
+test-job:
+  stage: test
+  before_script:
+    - go mod download
+  script:
+    - echo "Testing the app"
+    - go test ./tests/resolvers
+    - go test ./tests/repos/postgre
+
+lint-job:
+  stage: test
+  image: golangci/golangci-lint:latest
+  before_script:
+    - go mod download
+  script:
+    - echo "Linters check"
+    - golangci-lint run -c .golangci.yml ./...
+
+.prepare_ssh:
+  before_script:
+    - "command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )"
+
+    - eval $(ssh-agent -s)
+    - cat $SSH_PRIVATE_KEY | tr -d '\r' | ssh-add -
+
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -t rsa 178.20.45.135 >> ~/.ssh/known_hosts
+    - docker login --username japsty --password $DOCKER_TOKEN
+
+deploy-job:
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  extends: .prepare_ssh
+  image: docker
+  services:
+    - docker:dind
+  stage: deploy
+  script:
+    - docker build -t japsty/note_manager:latest .
+    - docker push japsty/note_manager:latest
+    - ssh ubuntu@37.139.40.243 'sudo docker stop note_manager || echo 1'
+    - ssh ubuntu@37.139.40.243 'sudo docker rm note_manager || echo 1'
+    - ssh ubuntu@37.139.40.243 'sudo docker network create manager_network'
+    - ssh ubuntu@37.139.40.243 'sudo docker pull japsty/note_manager:latest'
+    # поскольку я использовал mysql как репозиторий, мне потребовалось поднять отдельный контейнер
+    # закоментил поскольку думал, что если деплоить куда-то, то стирать всю базу данных и заново поднимать
+    # при каждом нововведении в приложении будет глупо
+    - ssh ubuntu@37.139.40.243 'sudo docker run -d --name mysqlDB --network manager_network -e MYSQL_DATABASE=Vkontakte -e MYSQL_USER=Vkontakte -e MYSQL_PASSWORD=vkontakte -e MYSQL_ROOT_PASSWORD=root mysql:latest'
+    - sleep 10 #Поскольку helthchek'a нет
+    - ssh ubuntu@37.139.40.243 'sudo docker run -d --restart always --network manager_network -d -p 80:80 --name=note_manager japsty/note_manager:latest'
+  environment:
+    name: production
+    url: http://37.139.40.243
+  only:
+    - master
+    - main
