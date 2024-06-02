@@ -8,7 +8,6 @@ import (
 	"Ozon_testtask/internal/model"
 	"context"
 	"errors"
-	"fmt"
 )
 
 // AddPost is the resolver for the addPost field.
@@ -41,10 +40,8 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.NewComm
 	var parentID string
 
 	if comment.ParentID != nil {
-		fmt.Println("not nil")
 		parentID = *comment.ParentID
 	} else {
-		fmt.Println("nil")
 		parentID = ""
 	}
 
@@ -60,6 +57,12 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.NewComm
 		return nil, err
 	}
 	post.Comments = postComments
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	if ch, found := r.subscribers[comment.PostID]; found {
+		ch <- postComments[len(postComments)-1]
+	}
 
 	return &post, nil
 }
@@ -121,19 +124,18 @@ func (r *queryResolver) Post(ctx context.Context, id string, limit int, offset i
 func (r *subscriptionResolver) CommentAdded(ctx context.Context, postID string) (<-chan *model.Comment, error) {
 	ch := make(chan *model.Comment, 1)
 
+	r.mutex.Lock()
+	r.subscribers[postID] = ch
+	r.mutex.Unlock()
+
 	go func() {
 		<-ctx.Done()
+		r.mutex.Lock()
+		delete(r.subscribers, postID)
+		r.mutex.Unlock()
 	}()
 
-	go func(ch chan *model.Comment) {
-		for {
-			select {
-			case <-ch:
-
-			}
-		}
-	}(ch)
-	panic(fmt.Errorf("not implemented: CommentAdded - commentAdded"))
+	return ch, nil
 }
 
 // Mutation returns MutationResolver implementation.

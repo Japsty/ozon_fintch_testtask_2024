@@ -13,14 +13,50 @@ import (
 )
 
 var parentID = ""
+var createdAtTime = time.Now()
+
+var mockPostForComments = model.Post{
+	ID:              "a4ad7024-7c45-4453-9fac-2dfae1ad2c96",
+	Title:           "Test Title",
+	Content:         "Test Content",
+	UserID:          "5594a70f-ad01-427e-be8a-43bf94fc76fd",
+	Comments:        []*model.Comment{&mockComment, &mockChildComment, &mockChildChildComment},
+	CommentsAllowed: true,
+	CreatedAt:       "",
+}
+
 var mockComment = model.Comment{
-	ID:        "14ad7024-7c45-4453-9fac-2dfae1ad2c96",
+	ID:       "14ad7024-7c45-4453-9fac-2dfae1ad2c96",
+	Content:  "Test Content",
+	AuthorID: "5594a70f-ad01-427e-be8a-43bf94fc76fd",
+	PostID:   "a4ad7024-7c45-4453-9fac-2dfae1ad2c96",
+	ParentID: nil,
+	Replies: []*model.Comment{
+		&mockChildComment,
+	},
+	CreatedAt: createdAtTime.String(),
+}
+
+var childParentID = "14ad7024-7c45-4453-9fac-2dfae1ad2c96"
+var mockChildComment = model.Comment{
+	ID:        "24ad7024-7c45-4453-9fac-2dfae1ad2c96",
 	Content:   "Test Content",
 	AuthorID:  "5594a70f-ad01-427e-be8a-43bf94fc76fd",
 	PostID:    "a4ad7024-7c45-4453-9fac-2dfae1ad2c96",
-	ParentID:  &parentID,
+	ParentID:  &childParentID,
+	Replies:   []*model.Comment{&mockChildChildComment},
+	CreatedAt: createdAtTime.String(),
+}
+
+var childChildParentID = "24ad7024-7c45-4453-9fac-2dfae1ad2c96"
+var mockChildChildComment = model.Comment{
+	ID:        "34ad7024-7c45-4453-9fac-2dfae1ad2c96",
+	Content:   "Test Content",
+	AuthorID:  "5594a70f-ad01-427e-be8a-43bf94fc76fd",
+	PostID:    "a4ad7024-7c45-4453-9fac-2dfae1ad2c96",
+	ParentID:  &childChildParentID,
 	Replies:   nil,
-	CreatedAt: "",
+	CreatedAt: createdAtTime.String(),
 }
 
 type CommentWithoutPointers struct {
@@ -64,63 +100,29 @@ func TestCreateComment(t *testing.T) {
 
 	repo := postgre.NewCommentRepository(db)
 
-	createdAt := time.Now()
+	mock.ExpectBegin()
 
 	mock.ExpectExec(regexp.QuoteMeta(querries.CreateComment)).WithArgs(
 		mockComment.ID,
 		mockComment.Content,
 		mockComment.AuthorID,
 		mockComment.PostID,
-		mockComment.ParentID,
+		"",
 	).WillReturnResult(
 		sqlmock.NewResult(0, 1))
 
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByPostID)).WithArgs(
-		mockComment.PostID,
-	).
-		WillReturnRows(
-			sqlmock.NewRows(
-				[]string{
-					"id",
-					"title",
-					"content",
-					"user_id",
-					"comments_allowed",
-					"created_at",
-				}).
-				AddRow(
-					mockComment.ID,
-					mockComment.Content,
-					mockComment.AuthorID,
-					mockComment.PostID,
-					mockComment.ParentID,
-					createdAt,
-				))
+	mock.ExpectCommit()
 
-	comment, err := repo.CreateComment(
+	err = repo.CreateComment(
 		context.Background(),
 		mockComment.ID,
 		mockComment.Content,
 		mockComment.AuthorID,
-		mockPost.ID,
+		mockComment.PostID,
 		parentID,
 	)
 	if err != nil {
 		t.Fatalf("CreateComment Error: %s", err)
-	}
-
-	expectedComment := model.Comment{
-		ID:        "14ad7024-7c45-4453-9fac-2dfae1ad2c96",
-		Content:   "Test Content",
-		AuthorID:  "5594a70f-ad01-427e-be8a-43bf94fc76fd",
-		PostID:    "a4ad7024-7c45-4453-9fac-2dfae1ad2c96",
-		ParentID:  &parentID,
-		Replies:   nil,
-		CreatedAt: createdAt.String(),
-	}
-
-	if !reflect.DeepEqual(*comment[0], expectedComment) {
-		t.Errorf("Unexpected comment data. Got %+v, expected %+v", comment, expectedComment)
 	}
 
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -137,120 +139,55 @@ func TestGetCommentByPostID(t *testing.T) {
 
 	repo := postgre.NewCommentRepository(db)
 
-	var childComment = mockComment
+	mock.ExpectBegin()
 
-	var childChildComment = mockComment
-
-	createdAt := time.Now()
-
-	childCommParentID := "14ad7024-7c45-4453-9fac-2dfae1ad2c96"
-
-	childComment.ID = "24ad7024-7c45-4453-9fac-2dfae1ad2c96"
-	childComment.ParentID = &childCommParentID
-	childComment.Replies = []*model.Comment{&childChildComment}
-	childComment.CreatedAt = createdAt.String()
-
-	childChildCommParentID := "24ad7024-7c45-4453-9fac-2dfae1ad2c96"
-
-	childChildComment.ID = "34ad7024-7c45-4453-9fac-2dfae1ad2c96"
-	childChildComment.ParentID = &childChildCommParentID
-	childChildComment.CreatedAt = createdAt.String()
-
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByPostID)).WithArgs(
+	mock.ExpectQuery(regexp.QuoteMeta(querries.GetAllCommentsByPostID)).WithArgs(
 		mockComment.PostID,
 	).
 		WillReturnRows(
 			sqlmock.NewRows(
-				[]string{
-					"id",
-					"title",
-					"content",
-					"user_id",
-					"comments_allowed",
-					"created_at",
-				}).
+				[]string{"id", "title", "content", "user_id", "comments_allowed", "created_at"}).
 				AddRow(
 					mockComment.ID,
 					mockComment.Content,
 					mockComment.AuthorID,
 					mockComment.PostID,
 					mockComment.ParentID,
-					createdAt,
-				))
+					createdAtTime,
+				).AddRow(
+				mockChildComment.ID,
+				mockChildComment.Content,
+				mockChildComment.AuthorID,
+				mockChildComment.PostID,
+				mockChildComment.ParentID,
+				createdAtTime,
+			).AddRow(
+				mockChildChildComment.ID,
+				mockChildChildComment.Content,
+				mockChildChildComment.AuthorID,
+				mockChildChildComment.PostID,
+				mockChildChildComment.ParentID,
+				createdAtTime,
+			),
+		)
 
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByParentID)).WithArgs(
-		mockComment.ID,
-	).
-		WillReturnRows(
-			sqlmock.NewRows(
-				[]string{
-					"id",
-					"title",
-					"content",
-					"user_id",
-					"comments_allowed",
-					"created_at",
-				}).
-				AddRow(
-					childComment.ID,
-					childComment.Content,
-					childComment.AuthorID,
-					childComment.PostID,
-					childComment.ParentID,
-					createdAt,
-				))
+	mock.ExpectCommit()
 
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByParentID)).WithArgs(
-		childComment.ID,
-	).
-		WillReturnRows(
-			sqlmock.NewRows(
-				[]string{
-					"id",
-					"title",
-					"content",
-					"user_id",
-					"comments_allowed",
-					"created_at",
-				}).
-				AddRow(
-					childChildComment.ID,
-					childChildComment.Content,
-					childChildComment.AuthorID,
-					childChildComment.PostID,
-					childChildComment.ParentID,
-					createdAt,
-				))
-
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByParentID)).WithArgs(
-		childChildComment.ID,
-	).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"id",
-			"content",
-			"author_id",
-			"post_id",
-			"parent_id",
-			"created_at",
-		}))
-
-	comments, err := repo.GetCommentsByPostID(context.Background(), mockPost.ID)
+	comments, err := repo.GetCommentsByPostID(context.Background(), mockPostForComments.ID)
 	if err != nil {
 		t.Fatalf("GetCommentsByPostID Error: %s", err)
 	}
 
-	expectedComment := &model.Comment{
-		ID:        "14ad7024-7c45-4453-9fac-2dfae1ad2c96",
-		Content:   "Test Content",
-		AuthorID:  "5594a70f-ad01-427e-be8a-43bf94fc76fd",
-		PostID:    "a4ad7024-7c45-4453-9fac-2dfae1ad2c96",
-		ParentID:  &parentID,
-		Replies:   []*model.Comment{&childComment},
-		CreatedAt: createdAt.String(),
-	}
+	expectedComment := mockComment
 
-	if !reflect.DeepEqual(deletePointer(comments[0]), deletePointer(expectedComment)) {
-		t.Errorf("Unexpected comment data. Got %+v, expected %+v", deletePointer(comments[0]), deletePointer(expectedComment))
+	for _, comm := range comments {
+		if !reflect.DeepEqual(deletePointer(comm), deletePointer(&expectedComment)) {
+			t.Errorf(
+				"Unexpected comment data. Got %+v, expected %+v",
+				deletePointer(comm),
+				deletePointer(&expectedComment),
+			)
+		}
 	}
 
 	if err = mock.ExpectationsWereMet(); err != nil {
@@ -259,132 +196,83 @@ func TestGetCommentByPostID(t *testing.T) {
 }
 
 func TestGetCommentByPostIDPaginated(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected ", err)
+	testCases := []struct {
+		TestCaseID    int
+		Name          string
+		Limit         int
+		Offset        int
+		InputComment  model.Comment
+		OutputStruct  []*model.Comment
+		ExpectedError error
+	}{
+		{
+			TestCaseID:    1,
+			Name:          "Success",
+			Limit:         1,
+			Offset:        0,
+			InputComment:  mockComment,
+			OutputStruct:  []*model.Comment{&mockComment, &mockChildComment},
+			ExpectedError: nil,
+		},
 	}
-	defer db.Close()
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			if err != nil {
+				t.Fatalf("an error '%s' was not expected ", err)
+			}
+			defer db.Close()
 
-	repo := postgre.NewCommentRepository(db)
+			repo := postgre.NewCommentRepository(db)
 
-	var childComment = mockComment
+			mock.ExpectBegin()
+			mock.ExpectQuery(regexp.QuoteMeta(querries.GetAllCommentsByPostID)).WithArgs(
+				tc.InputComment.PostID).WillReturnRows(
+				sqlmock.NewRows([]string{"id", "title", "content", "user_id", "comments_allowed", "created_at"}).
+					AddRow(
+						tc.InputComment.ID,
+						tc.InputComment.Content,
+						tc.InputComment.AuthorID,
+						tc.InputComment.PostID,
+						tc.InputComment.ParentID,
+						createdAtTime,
+					).AddRow(
+					mockChildComment.ID,
+					mockChildComment.Content,
+					mockChildComment.AuthorID,
+					mockChildComment.PostID,
+					mockChildComment.ParentID,
+					createdAtTime,
+				).AddRow(
+					mockChildChildComment.ID,
+					mockChildChildComment.Content,
+					mockChildChildComment.AuthorID,
+					mockChildChildComment.PostID,
+					mockChildChildComment.ParentID,
+					createdAtTime,
+				),
+			)
+			mock.ExpectCommit()
 
-	var childChildComment = mockComment
+			comments, err := repo.GetCommentsByPostIDPaginated(context.Background(), mockPostForComments.ID, 10, 0)
+			if err != nil {
+				t.Fatalf("TestGetCommentByPostIDPaginated Error: %s", err)
+			}
 
-	createdAt := time.Now()
+			for idx, comm := range comments {
+				if !reflect.DeepEqual(deletePointer(comm), deletePointer(tc.OutputStruct[idx])) {
+					t.Errorf(
+						"Unexpected comment data. Got %+v, expected %+v",
+						deletePointer(comm),
+						deletePointer(tc.OutputStruct[idx]),
+					)
+				}
+			}
 
-	childCommParentID := "14ad7024-7c45-4453-9fac-2dfae1ad2c96"
-
-	childComment.ID = "44ad7024-7c45-4453-9fac-2dfae1ad2c96"
-	childComment.ParentID = &childCommParentID
-	childComment.Replies = []*model.Comment{&childChildComment}
-	childComment.CreatedAt = createdAt.String()
-
-	childChildCommParentID := "44ad7024-7c45-4453-9fac-2dfae1ad2c96"
-
-	childChildComment.ID = "34ad7024-7c45-4453-9fac-2dfae1ad2c96"
-	childChildComment.ParentID = &childChildCommParentID
-	childChildComment.CreatedAt = createdAt.String()
-
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByPostIDPaginated)).WithArgs(
-		mockComment.PostID, 1, 0,
-	).
-		WillReturnRows(
-			sqlmock.NewRows(
-				[]string{
-					"id",
-					"title",
-					"content",
-					"user_id",
-					"comments_allowed",
-					"created_at",
-				}).
-				AddRow(
-					mockComment.ID,
-					mockComment.Content,
-					mockComment.AuthorID,
-					mockComment.PostID,
-					mockComment.ParentID,
-					createdAt,
-				))
-
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByParentID)).WithArgs(
-		mockComment.ID,
-	).
-		WillReturnRows(
-			sqlmock.NewRows(
-				[]string{
-					"id",
-					"title",
-					"content",
-					"user_id",
-					"comments_allowed",
-					"created_at",
-				}).
-				AddRow(
-					childComment.ID,
-					childComment.Content,
-					childComment.AuthorID,
-					childComment.PostID,
-					childComment.ParentID,
-					createdAt,
-				))
-
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByParentID)).WithArgs(
-		childComment.ID,
-	).
-		WillReturnRows(
-			sqlmock.NewRows(
-				[]string{
-					"id",
-					"title",
-					"content",
-					"user_id",
-					"comments_allowed",
-					"created_at",
-				}).
-				AddRow(
-					childChildComment.ID,
-					childChildComment.Content,
-					childChildComment.AuthorID,
-					childChildComment.PostID,
-					childChildComment.ParentID,
-					createdAt,
-				))
-
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByParentID)).WithArgs(
-		childChildComment.ID,
-	).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"id",
-			"content",
-			"author_id",
-			"post_id",
-			"parent_id",
-			"created_at",
-		}))
-
-	comments, err := repo.GetCommentsByPostIDPaginated(context.Background(), mockPost.ID, 1, 0)
-	if err != nil {
-		t.Fatalf("TestGetCommentByPostIDPaginated Error: %s", err)
-	}
-
-	expectedComment := &model.Comment{
-		ID:        "14ad7024-7c45-4453-9fac-2dfae1ad2c96",
-		Content:   "Test Content",
-		AuthorID:  "5594a70f-ad01-427e-be8a-43bf94fc76fd",
-		PostID:    "a4ad7024-7c45-4453-9fac-2dfae1ad2c96",
-		ParentID:  &parentID,
-		Replies:   []*model.Comment{&childComment},
-		CreatedAt: createdAt.String(),
-	}
-
-	if !reflect.DeepEqual(deletePointer(comments[0]), deletePointer(expectedComment)) {
-		t.Errorf("Unexpected comment data. Got %+v, expected %+v", deletePointer(comments[0]), deletePointer(expectedComment))
-	}
-
-	if err = mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
+			if err = mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("there were unfulfilled expectations: %s", err)
+			}
+		})
 	}
 }
 
@@ -397,8 +285,9 @@ func TestGetCommentByPostIDPaginatedEmpty(t *testing.T) {
 
 	repo := postgre.NewCommentRepository(db)
 
-	mock.ExpectQuery(regexp.QuoteMeta(querries.GetCommentsByPostIDPaginated)).WithArgs(
-		mockComment.PostID, 0, 0,
+	mock.ExpectBegin()
+	mock.ExpectQuery(regexp.QuoteMeta(querries.GetAllCommentsByPostID)).WithArgs(
+		mockComment.PostID,
 	).WillReturnRows(
 		sqlmock.NewRows([]string{
 			"id",
@@ -409,6 +298,7 @@ func TestGetCommentByPostIDPaginatedEmpty(t *testing.T) {
 			"created_at",
 		}),
 	)
+	mock.ExpectCommit()
 
 	comments, err := repo.GetCommentsByPostIDPaginated(context.Background(), mockPost.ID, 0, 0)
 	if err != nil {

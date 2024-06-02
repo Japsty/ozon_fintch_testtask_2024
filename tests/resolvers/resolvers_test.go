@@ -50,6 +50,10 @@ var addPostResp struct {
 	AddPost AddPostResponse `json:"addPost"`
 }
 
+var postsResp struct {
+	Posts AddPostResponse `json:"posts"`
+}
+
 func TestAddPost(t *testing.T) {
 	testCases := []struct {
 		id       int
@@ -58,33 +62,33 @@ func TestAddPost(t *testing.T) {
 		query    string
 		response interface{}
 		isError  bool
-	}{{
-		id:       1,
-		name:     "Success",
-		mockPost: mockPost,
-		query: `
-		mutation AddPost {
-			addPost(post: { title: "mock title", content: "mock content", commentsAllowed: true }) {
-				id
-				title
-				content
-				userID
-				commentsAllowed
-				createdAt
-				comments {
-					id
-					content
-					authorID
-					postID
-					parentID
-					createdAt
-				}
-			}
-		}
-		`,
-		response: addPostResp,
-		isError:  false,
-	},
+	}{
+		{
+			id:       1,
+			name:     "Success",
+			mockPost: mockPost,
+			query: `
+				mutation AddPost {
+					addPost(post: { title: "mock title", content: "mock content", commentsAllowed: true }) {
+						id
+						title
+						content
+						userID
+						commentsAllowed
+						createdAt
+						comments {
+							id
+							content
+							authorID
+							postID
+							parentID
+							createdAt
+						}
+					}
+				}`,
+			response: addPostResp,
+			isError:  false,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -128,40 +132,36 @@ func TestAddComment(t *testing.T) {
 		query        string
 		response     interface{}
 		isError      bool
-	}{{
-		id:           1,
-		name:         "Success",
-		mockPost:     mockPost,
-		mockComments: []*model.Comment{mockComment},
-		query: `
-		mutation AddComment {
-			addComment(
-				comment: {
-					postID: "a2223908-47ff-4a9e-a775-8bea7ded7652"
-					content: "mock comment"
-					parentID: "\"\""
-				}
-			) {
-				id
-				title
-				content
-				userID
-				commentsAllowed
-				createdAt
-				comments {
+	}{
+		{
+			id:           1,
+			name:         "Success",
+			mockPost:     mockPost,
+			mockComments: []*model.Comment{mockComment},
+			query: `
+				mutation AddComment {
+				addComment(
+					comment: { postID: "14ad7024-7c45-4453-9fac-2dfae1ad2c96", content: "mock title comment" }
+				) {
 					id
+					title
 					content
-					authorID
-					postID
-					parentID
+					userID
+					commentsAllowed
 					createdAt
+					comments {
+						id
+						content
+						authorID
+						postID
+						parentID
+						createdAt
+					}
 				}
-			}
-		}
-		`,
-		response: addPostResp,
-		isError:  false,
-	},
+			}`,
+			response: addPostResp,
+			isError:  false,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -179,7 +179,7 @@ func TestAddComment(t *testing.T) {
 			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
 			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
 
-			mockCommentService.On("CommentPost", mock.Anything, mockComment.PostID, mockComment.Content).
+			mockCommentService.On("CommentPost", mock.Anything, mockComment.PostID, mockComment.Content, "").
 				Return(tc.mockComments, nil)
 			mockPostService.On("GetPostByPostID", mock.Anything, mockComment.PostID).Return(*tc.mockPost, nil)
 
@@ -202,34 +202,34 @@ func TestPost(t *testing.T) {
 		query        string
 		response     interface{}
 		isError      bool
-	}{{
-		id:           1,
-		name:         "Success",
-		mockPost:     mockPost,
-		mockComments: []*model.Comment{mockComment},
-		query: `
-		query Post {
-			post(id: "14ad7024-7c45-4453-9fac-2dfae1ad2c96", limit: 1, offset: 0) {
-				id
-				title
-				content
-				userID
-				commentsAllowed
-				createdAt
-				comments {
+	}{
+		{
+			id:           1,
+			name:         "Success",
+			mockPost:     mockPost,
+			mockComments: []*model.Comment{mockComment},
+			query: `
+			query Post {
+				post(id: "14ad7024-7c45-4453-9fac-2dfae1ad2c96", limit: 1, offset: 0) {
 					id
+					title
 					content
-					authorID
-					postID
-					parentID
+					userID
+					commentsAllowed
 					createdAt
+					comments {
+						id
+						content
+						authorID
+						postID
+						parentID
+						createdAt
+					}
 				}
-			}
-		}
-		`,
-		response: addPostResp,
-		isError:  false,
-	},
+			}`,
+			response: addPostResp,
+			isError:  false,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -262,47 +262,40 @@ func TestPost(t *testing.T) {
 
 func TestToggleComments(t *testing.T) {
 	testCases := []struct {
-		id           int
-		name         string
-		mockPost     *model.Post
-		mockComments []*model.Comment
-		query        string
-		response     interface{}
-		isError      bool
-	}{{
-		id:           1,
-		name:         "Success",
-		mockPost:     mockPost,
-		mockComments: []*model.Comment{mockComment},
-		query: `
-		mutation AddComment {
-			addComment(
-				comment: {
-					postID: "a2223908-47ff-4a9e-a775-8bea7ded7652"
-					content: "mock comment"
-					parentID: "\"\""
+		id       int
+		name     string
+		mockPost *model.Post
+		query    string
+		response interface{}
+		isError  bool
+	}{
+		{
+			id:       1,
+			name:     "Success",
+			mockPost: mockPost,
+			query: `
+				mutation ToggleComments {
+					toggleComments(postId: "14ad7024-7c45-4453-9fac-2dfae1ad2c96", allowed: false) {
+						id
+						title
+						content
+						userID
+						commentsAllowed
+						createdAt
+						comments {
+							id
+							content
+							authorID
+							postID
+							parentID
+							createdAt
+						}
+					}
 				}
-			) {
-				id
-				title
-				content
-				userID
-				commentsAllowed
-				createdAt
-				comments {
-					id
-					content
-					authorID
-					postID
-					parentID
-					createdAt
-				}
-			}
-		}
-		`,
-		response: addPostResp,
-		isError:  false,
-	},
+				`,
+			response: addPostResp,
+			isError:  false,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -320,7 +313,73 @@ func TestToggleComments(t *testing.T) {
 			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
 			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
 
-			mockPostService.On("UpdatePostCommentsStatus", mock.Anything, mockPost.ID, true).Return(*tc.mockPost, nil)
+			mockPostService.On("UpdatePostCommentsStatus", mock.Anything, mockPost.ID, false).Return(*tc.mockPost, nil)
+
+			err = c.Post(tc.query, &tc.response)
+			if err != nil {
+				return
+			}
+
+			mockPostService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestPosts(t *testing.T) {
+	testCases := []struct {
+		id           int
+		name         string
+		mockPosts    []*model.Post
+		mockComments []*model.Comment
+		query        string
+		response     interface{}
+		isError      bool
+	}{
+		{
+			id:           1,
+			name:         "Success",
+			mockPosts:    []*model.Post{mockPost},
+			mockComments: []*model.Comment{mockComment},
+			query: `
+			query Posts {
+				posts {
+					id
+					title
+					content
+					userID
+					commentsAllowed
+					createdAt
+					comments {
+						id
+						content
+						authorID
+						postID
+						parentID
+						createdAt
+					}
+				}
+			}`,
+			response: postsResp,
+			isError:  false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockPostService := new(mocks.PostServiceMock)
+			mockCommentService := new(mocks.CommentServiceMock)
+
+			zapLogger, err := zap.NewProduction()
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			logger := zapLogger.Sugar()
+
+			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+
+			mockPostService.On("GetAllPosts", mock.Anything).Return(tc.mockPosts, nil)
 
 			err = c.Post(tc.query, &tc.response)
 			if err != nil {

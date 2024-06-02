@@ -17,7 +17,7 @@ var mockPost = model.Post{
 	Title:           "Test Title",
 	Content:         "Test Content",
 	UserID:          "5594a70f-ad01-427e-be8a-43bf94fc76fd",
-	Comments:        nil,
+	Comments:        []*model.Comment{},
 	CommentsAllowed: true,
 	CreatedAt:       "",
 }
