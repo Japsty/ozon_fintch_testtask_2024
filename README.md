@@ -11,13 +11,7 @@
 
 ### Запуск
 
-Запуск из корневой директории проекта
-
-```shell
-  docker-compose up
-```
-
-Выбор хранилища при помощи изменения параметра STORAGE(postgres/inmemory)
+Запуск из корневой директории проекта, выбор хранилища при помощи изменения параметра STORAGE(postgres/inmemory)
 ```
 STORAGE=postgres PORT=8081 docker-compose up
 ```
