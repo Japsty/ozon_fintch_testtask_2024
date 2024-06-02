@@ -68,6 +68,7 @@ func main() {
 		cr = postgre.NewCommentRepository(postgresConnect)
 	case "inmemory":
 		logger.Infof("inmemory enabled")
+
 		pr = inmem.NewPostInMemoryRepository()
 		cr = inmem.NewCommentInMemoryRepository()
 	default:
@@ -95,6 +96,7 @@ func main() {
 				oc.Operation.Name,
 				oc.RawQuery,
 			)
+
 			return next(ctx)
 		},
 	)
@@ -132,5 +134,4 @@ func main() {
 	<-c
 
 	logger.Infof("Shutting down...")
-	os.Exit(0)
 }

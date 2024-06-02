@@ -94,7 +94,7 @@ func (cr *CommentRepo) GetCommentsByPostID(ctx context.Context, postID string) (
 
 		var createdAtTime time.Time
 
-		if err := rows.Scan(
+		if err = rows.Scan(
 			&comment.ID,
 			&comment.Content,
 			&comment.AuthorID,
@@ -125,6 +125,26 @@ func (cr *CommentRepo) GetCommentsByPostID(ctx context.Context, postID string) (
 	return roots, nil
 }
 
+func (cr *CommentRepo) buildCommentTree(comments map[string]*model.Comment, limit, offset int) []*model.Comment {
+	roots := []*model.Comment{}
+
+	for _, comment := range comments {
+		if comment.ParentID == nil {
+			if offset > 0 {
+				offset--
+			} else if limit > 0 {
+				roots = append(roots, comment)
+				limit--
+			}
+		} else {
+			parent := comments[*comment.ParentID]
+			parent.Replies = append(parent.Replies, comment)
+		}
+	}
+
+	return roots
+}
+
 func (cr *CommentRepo) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
 	txOptions := sql.TxOptions{
 		Isolation: sql.LevelSerializable,
@@ -150,15 +170,14 @@ func (cr *CommentRepo) GetCommentsByPostIDPaginated(ctx context.Context, postID 
 	}
 	defer rows.Close()
 
-	commentsMap := make(map[string]*model.Comment)
-	roots := []*model.Comment{}
+	comments := make(map[string]*model.Comment)
 
 	for rows.Next() {
 		comment := &model.Comment{}
 
 		var createdAtTime time.Time
 
-		if err := rows.Scan(
+		if err = rows.Scan(
 			&comment.ID,
 			&comment.Content,
 			&comment.AuthorID,
@@ -170,22 +189,10 @@ func (cr *CommentRepo) GetCommentsByPostIDPaginated(ctx context.Context, postID 
 		}
 
 		comment.CreatedAt = createdAtTime.String()
-		commentsMap[comment.ID] = comment
+		comments[comment.ID] = comment
 	}
 
-	for _, comment := range commentsMap {
-		if comment.ParentID == nil {
-			if offset > 0 {
-				offset--
-			} else if limit > 0 {
-				roots = append(roots, comment)
-				limit--
-			}
-		} else {
-			parent := commentsMap[*comment.ParentID]
-			parent.Replies = append(parent.Replies, comment)
-		}
-	}
+	roots := cr.buildCommentTree(comments, limit, offset)
 
 	if err = tx.Commit(); err != nil {
 		return nil, err

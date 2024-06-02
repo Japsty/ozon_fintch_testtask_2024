@@ -43,6 +43,7 @@ func (cr *CommentRepository) CreateComment(ctx context.Context, id, text, uID, p
 	if _, ok := cr.data[pID]; !ok {
 		cr.data[pID] = []*model.Comment{}
 	}
+
 	cr.data[pID] = append(cr.data[pID], newComment)
 
 	return newComment, nil
