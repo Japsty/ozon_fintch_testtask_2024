@@ -180,7 +180,7 @@ func TestAddComment(t *testing.T) {
 			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
 
 			mockCommentService.On("CommentPost", mock.Anything, mockComment.PostID, mockComment.Content, "").
-				Return(tc.mockComments, nil)
+				Return(tc.mockComments, mockComment, nil)
 			mockPostService.On("GetPostByPostID", mock.Anything, mockComment.PostID).Return(*tc.mockPost, nil)
 
 			err = c.Post(tc.query, &tc.response)

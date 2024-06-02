@@ -12,9 +12,9 @@ type CommentServiceMock struct {
 	mock.Mock
 }
 
-func (cs *CommentServiceMock) CommentPost(ctx context.Context, id, text, parentID string) ([]*model.Comment, error) {
+func (cs *CommentServiceMock) CommentPost(ctx context.Context, id, text, parentID string) ([]*model.Comment, *model.Comment, error) {
 	args := cs.Called(ctx, id, text, parentID)
-	return args.Get(0).([]*model.Comment), args.Error(1)
+	return args.Get(0).([]*model.Comment), args.Get(1).(*model.Comment), args.Error(2)
 }
 
 func (cs *CommentServiceMock) GetCommentsByPostID(ctx context.Context, id string, l, o int) ([]*model.Comment, error) {

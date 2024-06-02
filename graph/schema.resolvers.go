@@ -45,7 +45,7 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.NewComm
 		parentID = ""
 	}
 
-	postComments, err := r.CommentService.CommentPost(ctxWithTimeout, comment.PostID, comment.Content, parentID)
+	postComments, comm, err := r.CommentService.CommentPost(ctxWithTimeout, comment.PostID, comment.Content, parentID)
 	if err != nil {
 		r.Logger.Error("AddComment Resolver CommentPost Error: ", err)
 		return nil, err
@@ -61,7 +61,7 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.NewComm
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if ch, found := r.subscribers[comment.PostID]; found {
-		ch <- postComments[len(postComments)-1]
+		ch <- comm
 	}
 
 	return &post, nil

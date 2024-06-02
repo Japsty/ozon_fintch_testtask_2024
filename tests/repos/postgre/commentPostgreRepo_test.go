@@ -102,18 +102,28 @@ func TestCreateComment(t *testing.T) {
 
 	mock.ExpectBegin()
 
-	mock.ExpectExec(regexp.QuoteMeta(querries.CreateComment)).WithArgs(
+	mock.ExpectQuery(regexp.QuoteMeta(querries.CreateComment)).WithArgs(
 		mockComment.ID,
 		mockComment.Content,
 		mockComment.AuthorID,
 		mockComment.PostID,
 		"",
-	).WillReturnResult(
-		sqlmock.NewResult(0, 1))
+	).WillReturnRows(
+		sqlmock.NewRows(
+			[]string{"id", "content", "author_id", "post_id", "parent_id", "created_at"}).
+			AddRow(
+				mockComment.ID,
+				mockComment.Content,
+				mockComment.AuthorID,
+				mockComment.PostID,
+				mockComment.ParentID,
+				createdAtTime,
+			),
+	)
 
 	mock.ExpectCommit()
 
-	err = repo.CreateComment(
+	comm, err := repo.CreateComment(
 		context.Background(),
 		mockComment.ID,
 		mockComment.Content,
@@ -123,6 +133,17 @@ func TestCreateComment(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatalf("CreateComment Error: %s", err)
+	}
+
+	expectedComm := mockComment
+	expectedComm.Replies = []*model.Comment{}
+
+	if !reflect.DeepEqual(deletePointer(comm), deletePointer(&expectedComm)) {
+		t.Errorf(
+			"Unexpected comment data. Got %+v, expected %+v",
+			deletePointer(comm),
+			deletePointer(&expectedComm),
+		)
 	}
 
 	if err = mock.ExpectationsWereMet(); err != nil {

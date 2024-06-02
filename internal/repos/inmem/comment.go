@@ -19,7 +19,7 @@ func NewCommentInMemoryRepository() *CommentRepository {
 	}
 }
 
-func (cr *CommentRepository) CreateComment(_ context.Context, id, text, uID, pID, pcID string) error {
+func (cr *CommentRepository) CreateComment(_ context.Context, id, text, uID, pID, pcID string) (*model.Comment, error) {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
 
@@ -35,7 +35,7 @@ func (cr *CommentRepository) CreateComment(_ context.Context, id, text, uID, pID
 
 	cr.data[pID] = append(cr.data[pID], newComment)
 
-	return nil
+	return newComment, nil
 }
 
 func (cr *CommentRepository) getRepliesForComment(comment *model.Comment) error {

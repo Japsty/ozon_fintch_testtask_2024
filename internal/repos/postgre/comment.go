@@ -8,22 +8,22 @@ import (
 	"time"
 )
 
-type CommentRepository struct {
+type CommentRepo struct {
 	db *sql.DB
 }
 
-func NewCommentRepository(db *sql.DB) *CommentRepository {
-	return &CommentRepository{db: db}
+func NewCommentRepository(db *sql.DB) *CommentRepo {
+	return &CommentRepo{db: db}
 }
 
-func (cr *CommentRepository) CreateComment(ctx context.Context, id, text, uID, pID, pcID string) error {
+func (cr *CommentRepo) CreateComment(ctx context.Context, id, text, uID, pID, pcID string) (*model.Comment, error) {
 	txOptions := sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	}
 
 	tx, err := cr.db.BeginTx(ctx, &txOptions)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer func() {
@@ -35,19 +35,33 @@ func (cr *CommentRepository) CreateComment(ctx context.Context, id, text, uID, p
 		}
 	}()
 
-	_, err = tx.ExecContext(ctx, querries.CreateComment, id, text, uID, pID, pcID)
+	var comment model.Comment
+
+	var createdAtTime time.Time
+
+	err = tx.QueryRowContext(ctx, querries.CreateComment, id, text, uID, pID, pcID).Scan(
+		&comment.ID,
+		&comment.Content,
+		&comment.AuthorID,
+		&comment.PostID,
+		&comment.ParentID,
+		&createdAtTime,
+	)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	comment.CreatedAt = createdAtTime.String()
 
 	if err = tx.Commit(); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &comment, nil
 }
 
-func (cr *CommentRepository) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
+func (cr *CommentRepo) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
 	txOptions := sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	}
@@ -111,7 +125,7 @@ func (cr *CommentRepository) GetCommentsByPostID(ctx context.Context, postID str
 	return roots, nil
 }
 
-func (cr *CommentRepository) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
+func (cr *CommentRepo) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
 	txOptions := sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	}
