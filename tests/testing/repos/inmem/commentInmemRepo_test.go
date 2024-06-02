@@ -78,7 +78,6 @@ func deletePointer(comment *model.Comment) CommentWithoutPointers {
 }
 
 func TestCreateComment(t *testing.T) {
-
 	repo := inmem.NewCommentInMemoryRepository()
 
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -110,7 +109,6 @@ func TestCreateComment(t *testing.T) {
 }
 
 func TestGetCommentByPostID(t *testing.T) {
-
 	repo := inmem.NewCommentInMemoryRepository()
 
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -139,6 +137,7 @@ func TestGetCommentByPostID(t *testing.T) {
 	if err != nil {
 		return
 	}
+
 	childChild, err := repo.CreateComment(
 		ctxWithTimeout,
 		mockChildChildComment.ID,
@@ -177,7 +176,6 @@ func TestGetCommentByPostID(t *testing.T) {
 }
 
 func TestGetCommentByPostIDPaginated(t *testing.T) {
-
 	repo := inmem.NewCommentInMemoryRepository()
 
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -206,6 +204,7 @@ func TestGetCommentByPostIDPaginated(t *testing.T) {
 	if err != nil {
 		return
 	}
+
 	childChild, err := repo.CreateComment(
 		ctxWithTimeout,
 		mockChildChildComment.ID,
