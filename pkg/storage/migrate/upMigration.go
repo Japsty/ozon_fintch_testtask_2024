@@ -1,7 +1,7 @@
 package migrate
 
 import (
-	"Ozon_testtask/migrations"
+	"Ozon_testtask/internal/migrations"
 	"context"
 	"database/sql"
 	"github.com/pressly/goose/v3"

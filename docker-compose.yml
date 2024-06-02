@@ -23,11 +23,11 @@ services:
     networks:
       - service_network
     ports:
-      - "8081:8081"
+      - "${PORT}:8081"
     environment:
-      STORAGE : "postgres"
-#      STORAGE : "inmemory"
-      PORT: '8081'
+      #postgres or inmemory
+      STORAGE: "${STORAGE}"
+      PORT: "${PORT}"
 
 networks:
   service_network:

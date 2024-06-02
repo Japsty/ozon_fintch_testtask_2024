@@ -91,7 +91,7 @@ func deletePointer(comment *model.Comment) CommentWithoutPointers {
 	}
 }
 
-func TestCreateComment(t *testing.T) {
+func TestCreateCommentSuccess(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected ", err)
@@ -151,7 +151,7 @@ func TestCreateComment(t *testing.T) {
 	}
 }
 
-func TestGetCommentByPostID(t *testing.T) {
+func TestGetCommentByPostIDSuccess(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected ", err)
@@ -216,7 +216,7 @@ func TestGetCommentByPostID(t *testing.T) {
 	}
 }
 
-func TestGetCommentByPostIDPaginated(t *testing.T) {
+func TestGetCommentByPostIDPaginatedSuccess(t *testing.T) {
 	testCases := []struct {
 		TestCaseID    int
 		Name          string
@@ -297,7 +297,7 @@ func TestGetCommentByPostIDPaginated(t *testing.T) {
 	}
 }
 
-func TestGetCommentByPostIDPaginatedEmpty(t *testing.T) {
+func TestGetCommentByPostIDPaginatedEmptySuccess(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected ", err)

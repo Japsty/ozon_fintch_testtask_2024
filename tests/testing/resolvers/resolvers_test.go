@@ -1,9 +1,9 @@
 package resolvers
 
 import (
-	"Ozon_testtask/graph"
+	graph2 "Ozon_testtask/internal/graph"
 	"Ozon_testtask/internal/model"
-	mocks "Ozon_testtask/tests/mocks/services"
+	"Ozon_testtask/tests/mocks/services"
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/stretchr/testify/mock"
@@ -102,8 +102,8 @@ func TestAddPost(t *testing.T) {
 
 			logger := zapLogger.Sugar()
 
-			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
-			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+			resolver := graph2.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph2.NewExecutableSchema(graph2.Config{Resolvers: resolver})))
 
 			mockPostService.On(
 				"AddPost",
@@ -176,8 +176,8 @@ func TestAddComment(t *testing.T) {
 
 			logger := zapLogger.Sugar()
 
-			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
-			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+			resolver := graph2.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph2.NewExecutableSchema(graph2.Config{Resolvers: resolver})))
 
 			mockCommentService.On("CommentPost", mock.Anything, mockComment.PostID, mockComment.Content, "").
 				Return(tc.mockComments, mockComment, nil)
@@ -243,8 +243,8 @@ func TestPost(t *testing.T) {
 
 			logger := zapLogger.Sugar()
 
-			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
-			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+			resolver := graph2.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph2.NewExecutableSchema(graph2.Config{Resolvers: resolver})))
 
 			mockPostService.On("GetPostByPostID", mock.Anything, mockPost.ID).Return(*tc.mockPost, nil)
 
@@ -310,8 +310,8 @@ func TestToggleComments(t *testing.T) {
 
 			logger := zapLogger.Sugar()
 
-			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
-			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+			resolver := graph2.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph2.NewExecutableSchema(graph2.Config{Resolvers: resolver})))
 
 			mockPostService.On("UpdatePostCommentsStatus", mock.Anything, mockPost.ID, false).Return(*tc.mockPost, nil)
 
@@ -376,8 +376,8 @@ func TestPosts(t *testing.T) {
 
 			logger := zapLogger.Sugar()
 
-			resolver := graph.NewResolver(mockPostService, mockCommentService, logger)
-			c := client.New(handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver})))
+			resolver := graph2.NewResolver(mockPostService, mockCommentService, logger)
+			c := client.New(handler.NewDefaultServer(graph2.NewExecutableSchema(graph2.Config{Resolvers: resolver})))
 
 			mockPostService.On("GetAllPosts", mock.Anything).Return(tc.mockPosts, nil)
 

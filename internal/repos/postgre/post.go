@@ -16,6 +16,7 @@ type PostRepo struct {
 func NewPostRepository(db *sql.DB) *PostRepo {
 	return &PostRepo{db: db}
 }
+
 func (pr *PostRepo) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 	rows, err := pr.db.QueryContext(ctx, querries.GetAllPosts)
 	if err != nil {

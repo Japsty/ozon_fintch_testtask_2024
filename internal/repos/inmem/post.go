@@ -69,13 +69,13 @@ func (pr *PostRepository) GetPostByPostID(_ context.Context, id string) (model.P
 }
 
 func (pr *PostRepository) UpdatePostStatus(ctx context.Context, id, _ string, status bool) (model.Post, error) {
-	pr.mutex.Lock()
-	defer pr.mutex.Unlock()
-
 	post, err := pr.GetPostByPostID(ctx, id)
 	if err != nil {
 		return model.Post{}, err
 	}
+
+	pr.mutex.Lock()
+	defer pr.mutex.Unlock()
 
 	post.CommentsAllowed = status
 
