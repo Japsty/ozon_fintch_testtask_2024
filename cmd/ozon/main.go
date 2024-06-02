@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Ozon_testtask/graph"
+	graph2 "Ozon_testtask/internal/graph"
 	"Ozon_testtask/internal/middleware"
 	"Ozon_testtask/internal/model"
 	"Ozon_testtask/internal/repos/inmem"
@@ -10,13 +10,17 @@ import (
 	"Ozon_testtask/pkg/storage/connect"
 	"Ozon_testtask/pkg/storage/migrate"
 	"context"
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
+	"os/signal"
 	"time"
 )
 
@@ -63,6 +67,8 @@ func main() {
 		pr = postgre.NewPostRepository(postgresConnect)
 		cr = postgre.NewCommentRepository(postgresConnect)
 	case "inmemory":
+		logger.Infof("inmemory enabled")
+
 		pr = inmem.NewPostInMemoryRepository()
 		cr = inmem.NewCommentInMemoryRepository()
 	default:
@@ -73,17 +79,37 @@ func main() {
 	ps := services.NewPostService(pr, cr)
 	cs := services.NewCommentService(cr, pr)
 
-	resolver := graph.NewResolver(ps, cs, logger)
+	resolver := graph2.NewResolver(ps, cs, logger)
 
 	r := mux.NewRouter()
-	r.Use(func(next http.Handler) http.Handler {
-		return middleware.AccessLog(logger, next)
-	})
 	r.Use(func(next http.Handler) http.Handler {
 		return middleware.Auth(logger, next)
 	})
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
+	srv := handler.NewDefaultServer(graph2.NewExecutableSchema(graph2.Config{Resolvers: resolver}))
+
+	srv.AroundOperations(
+		func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+			oc := graphql.GetOperationContext(ctx)
+			logger.Infof(
+				"GraphQL request. Operation Name: %v, Operation Query: %s",
+				oc.Operation.Name,
+				oc.RawQuery,
+			)
+
+			return next(ctx)
+		},
+	)
+
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		},
+	})
 
 	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	r.Handle("/query", srv)
@@ -93,9 +119,19 @@ func main() {
 		port = "8081"
 	}
 
-	logger.Infof("Starting client on port: %s", port)
+	logger.Infof("Starting on port: %s", port)
 
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		logger.Fatal("Server failed to start", err)
-	}
+	go func() {
+		if err := http.ListenAndServe(":"+port, r); err != nil {
+			logger.Fatal("Server failed to start", err)
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+
+	signal.Notify(c, os.Interrupt)
+
+	<-c
+
+	logger.Infof("Shutting down...")
 }

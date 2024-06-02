@@ -17,12 +17,12 @@ var mockPost = model.Post{
 	Title:           "Test Title",
 	Content:         "Test Content",
 	UserID:          "5594a70f-ad01-427e-be8a-43bf94fc76fd",
-	Comments:        nil,
+	Comments:        []*model.Comment{},
 	CommentsAllowed: true,
 	CreatedAt:       "",
 }
 
-func TestGetAllPosts(t *testing.T) {
+func TestGetAllPostsSuccess(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected ", err)
@@ -64,7 +64,7 @@ func TestGetAllPosts(t *testing.T) {
 	}
 }
 
-func TestCreatePost(t *testing.T) {
+func TestCreatePostSuccess(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected ", err)
@@ -91,7 +91,8 @@ func TestCreatePost(t *testing.T) {
 					"user_id",
 					"comments_allowed",
 					"created_at",
-				}).
+				},
+			).
 				AddRow(
 					mockPost.ID,
 					mockPost.Title,
@@ -99,7 +100,8 @@ func TestCreatePost(t *testing.T) {
 					mockPost.UserID,
 					true,
 					createdAt,
-				))
+				),
+		)
 
 	post, err := repo.CreatePost(
 		context.Background(),
@@ -131,7 +133,7 @@ func TestCreatePost(t *testing.T) {
 	}
 }
 
-func TestGetPostByPostID(t *testing.T) {
+func TestGetPostByPostIDSuccess(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected ", err)
@@ -170,7 +172,7 @@ func TestGetPostByPostID(t *testing.T) {
 	}
 }
 
-func TestUpdatePostCommentsStatus(t *testing.T) {
+func TestUpdatePostCommentsStatusSuccess(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected ", err)

@@ -8,106 +8,93 @@ import (
 	"time"
 )
 
-type CommentRepository struct {
+type CommentRepo struct {
 	db *sql.DB
 }
 
-func NewCommentRepository(db *sql.DB) *CommentRepository {
-	return &CommentRepository{db: db}
+func NewCommentRepository(db *sql.DB) *CommentRepo {
+	return &CommentRepo{db: db}
 }
 
-func (cr *CommentRepository) CreateComment(ctx context.Context, id, text, uID, pID, pcID string) ([]*model.Comment, error) {
-	_, err := cr.db.ExecContext(ctx, querries.CreateComment, id, text, uID, pID, pcID)
+func (cr *CommentRepo) CreateComment(ctx context.Context, id, text, uID, pID, pcID string) (*model.Comment, error) {
+	txOptions := sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	}
+
+	tx, err := cr.db.BeginTx(ctx, &txOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostID, pID)
-	if err != nil {
-		return nil, err
-	}
-
-	comments := []*model.Comment{}
-
-	for rows.Next() {
-		comment := &model.Comment{}
-
-		var createdAtTime time.Time
-
-		if err := rows.Scan(
-			&comment.ID,
-			&comment.Content,
-			&comment.AuthorID,
-			&comment.PostID,
-			&comment.ParentID,
-			&createdAtTime,
-		); err != nil {
-			return nil, err
+	defer func() {
+		if err != nil {
+			err = tx.Rollback()
+			if err != nil {
+				return
+			}
 		}
+	}()
 
-		comment.CreatedAt = createdAtTime.String()
+	var comment model.Comment
 
-		comments = append(comments, comment)
+	var createdAtTime time.Time
+
+	err = tx.QueryRowContext(ctx, querries.CreateComment, id, text, uID, pID, pcID).Scan(
+		&comment.ID,
+		&comment.Content,
+		&comment.AuthorID,
+		&comment.PostID,
+		&comment.ParentID,
+		&createdAtTime,
+	)
+
+	if err != nil {
+		return nil, err
 	}
 
-	return comments, nil
+	comment.CreatedAt = createdAtTime.String()
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &comment, nil
 }
 
-func (cr *CommentRepository) getRepliesForComment(ctx context.Context, comment *model.Comment) error {
-	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByParentID, comment.ID)
+func (cr *CommentRepo) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
+	txOptions := sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	}
+
+	tx, err := cr.db.BeginTx(ctx, &txOptions)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			err = tx.Rollback()
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	rows, err := tx.QueryContext(ctx, querries.GetAllCommentsByPostID, postID)
+	if err != nil {
+		return nil, err
 	}
 	defer rows.Close()
 
-	replies := []*model.Comment{}
+	commentsMap := make(map[string]*model.Comment)
+	roots := []*model.Comment{}
 
 	for rows.Next() {
-		reply := &model.Comment{}
+		comment := &model.Comment{}
 
 		var createdAtTime time.Time
 
 		if err = rows.Scan(
-			&reply.ID,
-			&reply.Content,
-			&reply.AuthorID,
-			&reply.PostID,
-			&reply.ParentID,
-			&createdAtTime,
-		); err != nil {
-			return err
-		}
-
-		reply.CreatedAt = createdAtTime.String()
-		replies = append(replies, reply)
-	}
-
-	for _, reply := range replies {
-		comment.Replies = append(comment.Replies, reply)
-
-		if err = cr.getRepliesForComment(ctx, reply); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (cr *CommentRepository) GetCommentsByPostID(ctx context.Context, postID string) ([]*model.Comment, error) {
-	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostID, postID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	comments := []*model.Comment{}
-
-	for rows.Next() {
-		comment := &model.Comment{}
-
-		var createdAtTime time.Time
-
-		if err := rows.Scan(
 			&comment.ID,
 			&comment.Content,
 			&comment.AuthorID,
@@ -119,33 +106,78 @@ func (cr *CommentRepository) GetCommentsByPostID(ctx context.Context, postID str
 		}
 
 		comment.CreatedAt = createdAtTime.String()
-		comments = append(comments, comment)
+		commentsMap[comment.ID] = comment
 	}
 
-	for _, comment := range comments {
-		if err := cr.getRepliesForComment(ctx, comment); err != nil {
-			return nil, err
+	for _, comment := range commentsMap {
+		if comment.ParentID == nil {
+			roots = append(roots, comment)
+		} else {
+			parent := commentsMap[*comment.ParentID]
+			parent.Replies = append(parent.Replies, comment)
 		}
 	}
 
-	return comments, nil
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return roots, nil
 }
 
-func (cr *CommentRepository) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
-	rows, err := cr.db.QueryContext(ctx, querries.GetCommentsByPostIDPaginated, postID, limit, offset)
+func (cr *CommentRepo) buildCommentTree(comments map[string]*model.Comment, limit, offset int) []*model.Comment {
+	roots := []*model.Comment{}
+
+	for _, comment := range comments {
+		if comment.ParentID == nil {
+			if offset > 0 {
+				offset--
+			} else if limit > 0 {
+				roots = append(roots, comment)
+				limit--
+			}
+		} else {
+			parent := comments[*comment.ParentID]
+			parent.Replies = append(parent.Replies, comment)
+		}
+	}
+
+	return roots
+}
+
+func (cr *CommentRepo) GetCommentsByPostIDPaginated(ctx context.Context, postID string, limit, offset int) ([]*model.Comment, error) {
+	txOptions := sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	}
+
+	tx, err := cr.db.BeginTx(ctx, &txOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			err = tx.Rollback()
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	rows, err := tx.QueryContext(ctx, querries.GetAllCommentsByPostID, postID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	comments := []*model.Comment{}
+	comments := make(map[string]*model.Comment)
 
 	for rows.Next() {
 		comment := &model.Comment{}
 
 		var createdAtTime time.Time
 
-		if err := rows.Scan(
+		if err = rows.Scan(
 			&comment.ID,
 			&comment.Content,
 			&comment.AuthorID,
@@ -157,14 +189,14 @@ func (cr *CommentRepository) GetCommentsByPostIDPaginated(ctx context.Context, p
 		}
 
 		comment.CreatedAt = createdAtTime.String()
-		comments = append(comments, comment)
+		comments[comment.ID] = comment
 	}
 
-	for _, comment := range comments {
-		if err := cr.getRepliesForComment(ctx, comment); err != nil {
-			return nil, err
-		}
+	roots := cr.buildCommentTree(comments, limit, offset)
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
 	}
 
-	return comments, nil
+	return roots, nil
 }

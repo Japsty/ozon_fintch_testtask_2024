@@ -9,14 +9,15 @@ import (
 	"time"
 )
 
-type PostRepository struct {
+type PostRepo struct {
 	db *sql.DB
 }
 
-func NewPostRepository(db *sql.DB) *PostRepository {
-	return &PostRepository{db: db}
+func NewPostRepository(db *sql.DB) *PostRepo {
+	return &PostRepo{db: db}
 }
-func (pr *PostRepository) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
+
+func (pr *PostRepo) GetAllPosts(ctx context.Context) ([]*model.Post, error) {
 	rows, err := pr.db.QueryContext(ctx, querries.GetAllPosts)
 	if err != nil {
 		return nil, err
@@ -47,7 +48,7 @@ func (pr *PostRepository) GetAllPosts(ctx context.Context) ([]*model.Post, error
 	return posts, nil
 }
 
-func (pr *PostRepository) CreatePost(ctx context.Context, id, title, text, uID string, status bool) (model.Post, error) {
+func (pr *PostRepo) CreatePost(ctx context.Context, id, title, text, uID string, status bool) (model.Post, error) {
 	var post model.Post
 
 	var createdAtTime time.Time
@@ -70,7 +71,7 @@ func (pr *PostRepository) CreatePost(ctx context.Context, id, title, text, uID s
 	return post, nil
 }
 
-func (pr *PostRepository) GetPostByPostID(ctx context.Context, id string) (model.Post, error) {
+func (pr *PostRepo) GetPostByPostID(ctx context.Context, id string) (model.Post, error) {
 	var post model.Post
 
 	var createdAtTime time.Time
@@ -93,7 +94,7 @@ func (pr *PostRepository) GetPostByPostID(ctx context.Context, id string) (model
 	return post, nil
 }
 
-func (pr *PostRepository) UpdatePostStatus(ctx context.Context, id, uID string, status bool) (model.Post, error) {
+func (pr *PostRepo) UpdatePostStatus(ctx context.Context, id, uID string, status bool) (model.Post, error) {
 	var foundPost model.Post
 
 	var createdAtTime time.Time

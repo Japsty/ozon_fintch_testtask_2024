@@ -3,6 +3,7 @@ package inmem
 import (
 	"Ozon_testtask/internal/model"
 	"context"
+	"errors"
 	"sync"
 	"time"
 )
@@ -19,9 +20,15 @@ func NewCommentInMemoryRepository() *CommentRepository {
 	}
 }
 
-func (cr *CommentRepository) CreateComment(_ context.Context, id, text, uID, pID, pcID string) ([]*model.Comment, error) {
+func (cr *CommentRepository) CreateComment(ctx context.Context, id, text, uID, pID, pcID string) (*model.Comment, error) {
 	cr.mutex.Lock()
 	defer cr.mutex.Unlock()
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
 
 	newComment := &model.Comment{
 		ID:        id,
@@ -33,87 +40,86 @@ func (cr *CommentRepository) CreateComment(_ context.Context, id, text, uID, pID
 		Replies:   []*model.Comment{},
 	}
 
+	if _, ok := cr.data[pID]; !ok {
+		cr.data[pID] = []*model.Comment{}
+	}
+
 	cr.data[pID] = append(cr.data[pID], newComment)
 
-	return cr.data[pID], nil
+	return newComment, nil
 }
 
-func (cr *CommentRepository) getRepliesForComment(comment *model.Comment) error {
+func (cr *CommentRepository) GetCommentsByPostID(ctx context.Context, pID string) ([]*model.Comment, error) {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
-	var replies []*model.Comment
-
-	for _, comms := range cr.data {
-		for _, comm := range comms {
-			if *comm.ParentID == comment.ID {
-				replies = append(replies, comm)
-			}
-		}
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
 	}
 
-	for _, reply := range replies {
-		comment.Replies = append(comment.Replies, reply)
-
-		if err := cr.getRepliesForComment(reply); err != nil {
-			return err
-		}
+	comms, ok := cr.data[pID]
+	if !ok {
+		return nil, errors.New("not found")
 	}
 
-	return nil
-}
+	comments := make(map[string]*model.Comment)
 
-func (cr *CommentRepository) GetCommentsByPostID(_ context.Context, pID string) ([]*model.Comment, error) {
-	cr.mutex.RLock()
-	defer cr.mutex.RUnlock()
-
-	var comments []*model.Comment
-
-	for _, comms := range cr.data {
-		for _, comm := range comms {
-			if comm.PostID == pID {
-				comments = append(comments, comm)
-			}
-		}
+	for _, comm := range comms {
+		comments[comm.ID] = comm
 	}
+
+	roots := []*model.Comment{}
 
 	for _, comment := range comments {
-		if err := cr.getRepliesForComment(comment); err != nil {
-			return nil, err
+		if comment.ParentID == nil || *comment.ParentID == "" {
+			roots = append(roots, comment)
+		} else {
+			parent := comments[*comment.ParentID]
+			parent.Replies = append(parent.Replies, comment)
 		}
 	}
 
-	return comments, nil
+	return roots, nil
 }
 
-func (cr *CommentRepository) GetCommentsByPostIDPaginated(_ context.Context, pID string, l, o int) ([]*model.Comment, error) {
+func (cr *CommentRepository) GetCommentsByPostIDPaginated(ctx context.Context, pID string, l, o int) ([]*model.Comment, error) {
 	cr.mutex.RLock()
 	defer cr.mutex.RUnlock()
 
-	var comments []*model.Comment
-
-	for _, comms := range cr.data {
-		for _, comm := range comms {
-			if comm.PostID == pID {
-				switch {
-				case o > 0:
-					o--
-					continue
-				case l > 0:
-					comments = append(comments, comm)
-					l--
-				default:
-					break
-				}
-			}
-		}
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
 	}
+
+	comms, ok := cr.data[pID]
+	if !ok {
+		return nil, errors.New("not found")
+	}
+
+	comments := make(map[string]*model.Comment)
+
+	for _, comm := range comms {
+		comments[comm.ID] = comm
+	}
+
+	roots := []*model.Comment{}
 
 	for _, comment := range comments {
-		if err := cr.getRepliesForComment(comment); err != nil {
-			return nil, err
+		if comment.ParentID == nil || *comment.ParentID == "" {
+			if o > 0 {
+				o--
+			} else if l > 0 {
+				roots = append(roots, comment)
+				l--
+			}
+		} else {
+			parent := comments[*comment.ParentID]
+			parent.Replies = append(parent.Replies, comment)
 		}
 	}
 
-	return comments, nil
+	return roots, nil
 }
